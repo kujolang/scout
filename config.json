@@ -1,0 +1,44 @@
+{
+  "tool": {
+    "name": "scout",
+    "version": "1.0.0",
+    "description": "Scout codebase intelligence tool for file scanning, language detection, dependency analysis, route discovery, security smell detection, and agent-ready context generation."
+  },
+  "scan": {
+    "default_max_depth": 6,
+    "max_file_size": 500000,
+    "ignored_dirs": [
+      ".git", ".svn", ".hg", "node_modules", "__pycache__",
+      ".venv", "venv", "env", ".env", ".tox", "dist", "build",
+      ".next", ".nuxt", "target", "vendor", ".bundle",
+      ".pytest_cache", ".mypy_cache", ".kujo_cache",
+      ".coverage", "coverage", ".terraform", ".cache",
+      "tmp", "temp", "logs", "backup", "backups"
+    ]
+  },
+  "output": {
+    "default_dir": "./results",
+    "path_mode": "relative",
+    "emit_kennel_index": false,
+    "emit_kennel_metadata": false,
+    "security_exports": [],
+    "formats": ["markdown", "json"],
+    "files": [
+      "FILE_TREE.md",
+      "README.md",
+      "llms.txt",
+      "AGENTS.md",
+      "CHECKLIST.md",
+      "intelligence.json",
+      "scan_manifest.json"
+    ]
+  },
+  "analysis": {
+    "dependencies": true,
+    "routes": true,
+    "security": true,
+    "metrics": true,
+    "security_baseline_file": "scout-baseline.json",
+    "show_suppressed_findings": false
+  }
+}

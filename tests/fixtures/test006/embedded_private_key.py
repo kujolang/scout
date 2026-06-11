@@ -1,0 +1,5 @@
+key_blob = """
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASC...
+-----END PRIVATE KEY-----
+"""

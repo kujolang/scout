@@ -1,0 +1,82 @@
+name: Repo Checks
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  repo-checks:
+    runs-on: ubuntu-latest
+    env:
+      SCOUT_CI_KUJO_REF: v0.14.0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate repository basics
+        run: |
+          set -euo pipefail
+          test -f scout.kujo
+          test -f config.json
+          test -f README.md
+
+          jq empty config.json
+          grep -q "^# Scout" README.md
+          grep -q "run scout.kujo" README.md
+          ! grep -q "kujoscan.kujo" README.md
+
+          echo "Repo checks passed"
+
+      - name: Install pinned Kujo runtime
+        run: |
+          set -euo pipefail
+
+          rm -rf /tmp/kujo-runtime "$GITHUB_WORKSPACE/.ci-bin"
+          git clone --depth 1 --branch "$SCOUT_CI_KUJO_REF" https://github.com/kujolang/kujo.git /tmp/kujo-runtime
+          cd /tmp/kujo-runtime
+          cargo build --release
+          mkdir -p "$GITHUB_WORKSPACE/.ci-bin"
+          install -m 0755 target/release/kujo "$GITHUB_WORKSPACE/.ci-bin/kujo"
+
+          "$GITHUB_WORKSPACE/.ci-bin/kujo" --version
+          "$GITHUB_WORKSPACE/.ci-bin/kujo" run --help >/dev/null
+          echo "KUJO_BIN=$GITHUB_WORKSPACE/.ci-bin/kujo" >> "$GITHUB_ENV"
+
+      - name: Install schema validation dependency
+        run: |
+          set -euo pipefail
+          python3 -m pip install --upgrade pip
+          python3 -m pip install jsonschema
+
+      - name: Run Scout regression suite (fast path)
+        env:
+          SCOUT_SKIP_SLOW: "1"
+        run: |
+          set -euo pipefail
+          tests/scripts/run_all_scout_tests.sh
+
+      - name: Verify version consistency and changelog shape
+        run: |
+          set -euo pipefail
+          tests/scripts/check_version_consistency.sh
+
+      - name: Fixture smoke scan
+        run: |
+          set -euo pipefail
+
+          rm -rf tests/tmp/ci-smoke
+          mkdir -p tests/tmp/ci-smoke
+
+          "$KUJO_BIN" run scout.kujo tests/fixtures/arc001 -o tests/tmp/ci-smoke -d 2 --security-export sarif --kennel-index --kennel-metadata
+
+          out_dir="$(find tests/tmp/ci-smoke -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          test -n "$out_dir"
+          test -f "$out_dir/intelligence.json"
+          test -f "$out_dir/scan_manifest.json"
+          test -f "$out_dir/index.json"
+          test -f "$out_dir/packages/arc001.json"
+
+          echo "Fixture smoke scan passed"

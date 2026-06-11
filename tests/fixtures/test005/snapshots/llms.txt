@@ -1,0 +1,17 @@
+# arc001
+
+Scout codebase intelligence summary for coding agents.
+
+## Overview
+
+- Target: tests/fixtures/arc001
+- Code files: 2
+- Lines: 8
+- Dependencies: 2
+- Routes: 0
+- Security findings: 0
+
+## Languages
+
+- JavaScript: 1
+- Python: 1

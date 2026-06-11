@@ -1,0 +1,66 @@
+{
+  "dependencies": [
+    {
+      "module": "node:fs",
+      "source": "src/sample.js",
+      "type": "module"
+    },
+    {
+      "module": "os",
+      "source": "src/sample.py",
+      "type": "import"
+    }
+  ],
+  "flags": {
+    "baseline_file": "scout-baseline.json",
+    "emit_kennel_index": false,
+    "emit_kennel_metadata": false,
+    "max_depth": 3,
+    "metrics_enabled": true,
+    "output_profile": "full",
+    "path_mode": "relative",
+    "security_exports": [],
+    "show_suppressed": false,
+    "skip_dependencies": false,
+    "skip_routes": false,
+    "skip_security": false,
+    "write_baseline": false
+  },
+  "metrics": {
+    "languages": {
+      "JavaScript": 1,
+      "Python": 1
+    },
+    "largest_files": [
+      {
+        "lang": "JavaScript",
+        "name": "sample.js",
+        "path": "src/sample.js",
+        "size": 60
+      },
+      {
+        "lang": "Python",
+        "name": "sample.py",
+        "path": "src/sample.py",
+        "size": 30
+      }
+    ],
+    "total_files": 2,
+    "total_lines": 8,
+    "total_size": 90
+  },
+  "output": "__OUTPUT__",
+  "output_root": "__OUTPUT_ROOT__",
+  "parse_errors": [],
+  "project": "arc001",
+  "routes": [],
+  "run_timestamp": "__RUN_TS__",
+  "security_findings": [],
+  "security_findings_total": 0,
+  "suppressed_security_findings": [],
+  "target": "tests/fixtures/arc001",
+  "tool": {
+    "name": "scout",
+    "version": "1.0.0"
+  }
+}

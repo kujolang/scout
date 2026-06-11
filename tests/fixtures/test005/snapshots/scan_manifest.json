@@ -1,0 +1,18 @@
+{
+  "artifacts": {
+    "agents": "AGENTS.md",
+    "checklist": "CHECKLIST.md",
+    "file_tree": "FILE_TREE.md",
+    "intelligence": "intelligence.json",
+    "llms": "llms.txt",
+    "report": "README.md"
+  },
+  "generated_at": "__GENERATED_AT__",
+  "output": "__OUTPUT__",
+  "schema_version": 1,
+  "target": "tests/fixtures/arc001",
+  "tool": {
+    "name": "scout",
+    "version": "1.0.0"
+  }
+}

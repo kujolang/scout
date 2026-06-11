@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["rule_id", "severity", "label", "file", "line", "snippet"],
+  "properties": {
+    "rule_id": {"type": "string", "minLength": 1},
+    "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+    "label": {"type": "string", "minLength": 1},
+    "file": {"type": "string", "minLength": 1},
+    "line": {"type": "integer", "minimum": 1},
+    "snippet": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}

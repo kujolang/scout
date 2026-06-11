@@ -1,0 +1,6 @@
+SECURITY_PATTERNS := [
+    {"match": ["password =", "token ="], "label": "Hardcoded credential", "severity": "high"}
+]
+
+# This should be detected.
+password = "real-secret"

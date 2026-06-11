@@ -1,0 +1,3 @@
+server := {}
+server.route("GET", "/jobs/:id", handler)
+note := "/jobs/example"
