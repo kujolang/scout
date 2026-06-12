@@ -39,6 +39,16 @@ If blocked:
 - Add stable tests for new behavior (fixture + script regression).
 - Avoid introducing non-deterministic output ordering.
 
+## Agent Readability and Search Hygiene
+
+- Prioritize copyable examples over tests: examples should model the most token-efficient idioms we want agents to imitate.
+- Treat README Quick Start and Examples as the canonical user-facing examples.
+- Treat `tests/fixtures/**` as regression contracts, not style guidance; do not shorten fixtures when explicit output improves contract clarity.
+- Treat `tests/fixtures/test005/snapshots/**` as generated golden output. Do not copy its prose style into docs or examples.
+- Exclude generated/bulk paths from the main sweep unless the task explicitly targets them; document the search exclusions you used.
+- Use this default broad-sweep shape, then narrow as needed: `rg <pattern> README.md docs lib scout.kujo tests/scripts -g '!tests/tmp/**' -g '!results/**'`.
+- There are no expected-fail or legacy examples in the current tree. If one is added, label it near the file or command that uses it and explain why it remains.
+
 ## Testing Standards
 
 Use the aggregate command for broad validation:
