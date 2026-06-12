@@ -4,22 +4,39 @@ Scout is a codebase intelligence tool built in [Kujo](https://github.com/kujolan
 
 It helps agents and humans start from the same map of a codebase: file tree, language breakdown, dependency graph, route/API discovery, security smell detection, review checklist, and reviewable context files. Scout packages repository state; it does not replace human review or guarantee perfect understanding.
 
+The examples in this README are the canonical copyable examples for Scout usage; tests and fixture snapshots are regression contracts, not style models.
+
 ## Quick Start
 
 ```bash
-# Scan the current directory
-kujo run scout.kujo -- .
-# Results are written to: ./results/<project-name>-<timestamp>/
+kujo run scout.kujo -- . --quick
+```
 
-# Scan a specific project
+Expected output shape:
+
+```text
+Scanning: .
+Output: ./results/<project-name>-<timestamp>
+Code files analyzed: <count>
+Dependencies: <count>
+Routes: <count>
+Security findings: <count>
+Output profile: minimal
+Scan manifest: ./results/<project-name>-<timestamp>/scan_manifest.json
+Done.
+```
+
+Common variants:
+
+```bash
+# Scan a specific project with full output artifacts
 kujo run scout.kujo -- ../my-project
 
 # Scan with custom output root and depth
 kujo run scout.kujo -- ./src -o ./reports -d 3
-# Results are written to: ./reports/<project-name>-<timestamp>/
 
-# Quick scan with minimal output artifacts
-kujo run scout.kujo -- ./src --quick
+# Security-focused scan
+kujo run scout.kujo -- ./src --skip-deps --skip-routes -o ./security-audit
 ```
 
 ## Runtime
@@ -223,6 +240,16 @@ tests/scripts/test_test003_security_matrix.sh
 # Golden artifact snapshots
 tests/scripts/test_test005_golden_snapshots.sh
 ```
+
+## Repository Reading Guide
+
+For humans and agents scanning this repo:
+
+- Canonical usage examples live in this README, especially Quick Start and Examples.
+- `tests/fixtures/**` contains purpose-built regression fixtures; keep those explicit even when they look repetitive.
+- `tests/fixtures/test005/snapshots/**` contains generated golden outputs; read them to understand contracts, not to copy style.
+- `tests/tmp/**` and `results/**` are generated local outputs and should be excluded from broad cleanup/search sweeps.
+- There are no known legacy, stale, or expected-fail examples in the current tree; label any future ones in-place with the reason.
 
 ## Extension Points
 
