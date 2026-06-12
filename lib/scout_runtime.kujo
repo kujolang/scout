@@ -222,6 +222,20 @@ func is_non_negative_integer_text(value) {
     return true
 }
 
+func append_lines(lines, new_lines) {
+    out_lines := lines
+    for line in new_lines {
+        out_lines := push(out_lines, line)
+    }
+    return out_lines
+}
+
+func print_lines(lines) {
+    for line in lines {
+        print(line)
+    }
+}
+
 ARGS := args()
 
 if file_exists(CONFIG_PATH) {
@@ -379,27 +393,29 @@ while I < len(ARGS) {
     handled_option := false
 
     if a == "-h" || a == "--help" {
-        print("Scout " + VERSION)
-        print("Usage: kujo run scout.kujo [path] [options]")
-        print("Options:")
-        print("  -o, --output DIR     Output root directory (default: ./results)")
-        print("  -d, --max-depth N    Max directory depth (default: 6)")
-        print("  --skip-security      Skip security smell scan")
-        print("  --skip-deps          Skip dependency analysis")
-        print("  --skip-routes        Skip route discovery")
-        print("  --include PATTERN    Include only files matching glob (repeatable)")
-        print("  --exclude PATTERN    Exclude files/directories matching glob (repeatable)")
-        print("  --ignore-file PATH   Ignore file path relative to target (default: .scoutignore)")
-        print("  --path-mode MODE     Path style for outputs: relative|absolute (default: relative)")
-        print("  --output-profile P   Output profile: full|minimal (default: full)")
-        print("  --quick              Shortcut for --output-profile minimal")
-        print("  --security-export F  Security export format: sarif|jsonl (repeatable)")
-        print("  --baseline PATH      Baseline file for suppressed security findings (default: scout-baseline.json)")
-        print("  --show-suppressed    Include suppressed findings in output")
-        print("  --write-baseline     Write current findings to baseline file")
-        print("  --kennel-index       Emit Kennel-compatible index.json payload")
-        print("  --kennel-metadata    Emit Kennel-compatible packages/<name>.json payload")
-        print("  -v, --version        Show version")
+        print_lines([
+            "Scout " + VERSION,
+            "Usage: kujo run scout.kujo [path] [options]",
+            "Options:",
+            "  -o, --output DIR     Output root directory (default: ./results)",
+            "  -d, --max-depth N    Max directory depth (default: 6)",
+            "  --skip-security      Skip security smell scan",
+            "  --skip-deps          Skip dependency analysis",
+            "  --skip-routes        Skip route discovery",
+            "  --include PATTERN    Include only files matching glob (repeatable)",
+            "  --exclude PATTERN    Exclude files/directories matching glob (repeatable)",
+            "  --ignore-file PATH   Ignore file path relative to target (default: .scoutignore)",
+            "  --path-mode MODE     Path style for outputs: relative|absolute (default: relative)",
+            "  --output-profile P   Output profile: full|minimal (default: full)",
+            "  --quick              Shortcut for --output-profile minimal",
+            "  --security-export F  Security export format: sarif|jsonl (repeatable)",
+            "  --baseline PATH      Baseline file for suppressed security findings (default: scout-baseline.json)",
+            "  --show-suppressed    Include suppressed findings in output",
+            "  --write-baseline     Write current findings to baseline file",
+            "  --kennel-index       Emit Kennel-compatible index.json payload",
+            "  --kennel-metadata    Emit Kennel-compatible packages/<name>.json payload",
+            "  -v, --version        Show version"
+        ])
         return
     }
 
@@ -2183,30 +2199,28 @@ LANGUAGE_KEYS_SORTED := sort_strings_asc(keys(METRICS["languages"]))
 FILE_TREE_MD := join(TREE_LINES, "\n") + "\n"
 
 REPORT_LINES := []
-REPORT_LINES := push(REPORT_LINES, "# " + PROJECT_NAME)
-REPORT_LINES := push(REPORT_LINES, "")
-REPORT_LINES := push(REPORT_LINES, "Automated report by Scout.")
-REPORT_LINES := push(REPORT_LINES, "")
-REPORT_LINES := push(REPORT_LINES, "## Scan Summary")
-REPORT_LINES := push(REPORT_LINES, "")
-REPORT_LINES := push(REPORT_LINES, "- Target: `" + TARGET_DISPLAY + "`")
-REPORT_LINES := push(REPORT_LINES, "- Total directories discovered: " + to_string(TOTAL_DIRS_SEEN))
-REPORT_LINES := push(REPORT_LINES, "- Total files discovered: " + to_string(TOTAL_FILES_SEEN))
-REPORT_LINES := push(REPORT_LINES, "- Code files analyzed: " + to_string(METRICS["total_files"]))
-REPORT_LINES := push(REPORT_LINES, "- Lines analyzed: " + to_string(METRICS["total_lines"]))
-REPORT_LINES := push(REPORT_LINES, "- Bytes analyzed: " + to_string(METRICS["total_size"]))
+REPORT_LINES := append_lines(REPORT_LINES, [
+    "# " + PROJECT_NAME,
+    "",
+    "Automated report by Scout.",
+    "",
+    "## Scan Summary",
+    "",
+    "- Target: `" + TARGET_DISPLAY + "`",
+    "- Total directories discovered: " + to_string(TOTAL_DIRS_SEEN),
+    "- Total files discovered: " + to_string(TOTAL_FILES_SEEN),
+    "- Code files analyzed: " + to_string(METRICS["total_files"]),
+    "- Lines analyzed: " + to_string(METRICS["total_lines"]),
+    "- Bytes analyzed: " + to_string(METRICS["total_size"])
+])
 
-REPORT_LINES := push(REPORT_LINES, "")
-REPORT_LINES := push(REPORT_LINES, "## Languages")
-REPORT_LINES := push(REPORT_LINES, "")
+REPORT_LINES := append_lines(REPORT_LINES, ["", "## Languages", ""])
 for lang_name in LANGUAGE_KEYS_SORTED {
     REPORT_LINES := push(REPORT_LINES, "- " + lang_name + ": " + to_string(METRICS["languages"][lang_name]) + " files")
 }
 
 if !SKIP_DEPS {
-    REPORT_LINES := push(REPORT_LINES, "")
-    REPORT_LINES := push(REPORT_LINES, "## Dependencies")
-    REPORT_LINES := push(REPORT_LINES, "")
+    REPORT_LINES := append_lines(REPORT_LINES, ["", "## Dependencies", ""])
     if len(DEPENDENCIES) == 0 {
         REPORT_LINES := push(REPORT_LINES, "No dependencies detected.")
     }
@@ -2218,15 +2232,15 @@ if !SKIP_DEPS {
 }
 
 if !SKIP_ROUTES {
-    REPORT_LINES := push(REPORT_LINES, "")
-    REPORT_LINES := push(REPORT_LINES, "## Routes")
-    REPORT_LINES := push(REPORT_LINES, "")
+    REPORT_LINES := append_lines(REPORT_LINES, ["", "## Routes", ""])
     if len(ROUTES) == 0 {
         REPORT_LINES := push(REPORT_LINES, "No routes discovered.")
     }
     if len(ROUTES) > 0 {
-        REPORT_LINES := push(REPORT_LINES, "| Method | Path | Source |")
-        REPORT_LINES := push(REPORT_LINES, "|--------|------|--------|")
+        REPORT_LINES := append_lines(REPORT_LINES, [
+            "| Method | Path | Source |",
+            "|--------|------|--------|"
+        ])
         for route in ROUTES {
             REPORT_LINES := push(REPORT_LINES, "| " + route["method"] + " | `" + route["path"] + "` | " + route["source"] + " |")
         }
@@ -2234,19 +2248,21 @@ if !SKIP_ROUTES {
 }
 
 if !SKIP_SEC {
-    REPORT_LINES := push(REPORT_LINES, "")
-    REPORT_LINES := push(REPORT_LINES, "## Security Findings")
-    REPORT_LINES := push(REPORT_LINES, "")
+    REPORT_LINES := append_lines(REPORT_LINES, ["", "## Security Findings", ""])
     if !SHOW_SUPPRESSED && len(SUPPRESSED_SECURITY_FINDINGS) > 0 {
-        REPORT_LINES := push(REPORT_LINES, "Suppressed findings hidden: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)) + " (use `--show-suppressed` to include).")
-        REPORT_LINES := push(REPORT_LINES, "")
+        REPORT_LINES := append_lines(REPORT_LINES, [
+            "Suppressed findings hidden: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)) + " (use `--show-suppressed` to include).",
+            ""
+        ])
     }
     if len(SECURITY_FINDINGS) == 0 {
         REPORT_LINES := push(REPORT_LINES, "No security smells detected.")
     }
     if len(SECURITY_FINDINGS) > 0 {
-        REPORT_LINES := push(REPORT_LINES, "| Severity | Issue | File | Line |")
-        REPORT_LINES := push(REPORT_LINES, "|----------|-------|------|------|")
+        REPORT_LINES := append_lines(REPORT_LINES, [
+            "| Severity | Issue | File | Line |",
+            "|----------|-------|------|------|"
+        ])
         for finding in SECURITY_FINDINGS {
             finding_label := to_string(finding["label"])
             if has_key(finding, "suppressed") && finding["suppressed"] {
@@ -2257,9 +2273,7 @@ if !SKIP_SEC {
     }
 }
 
-REPORT_LINES := push(REPORT_LINES, "")
-REPORT_LINES := push(REPORT_LINES, "## Largest Files")
-REPORT_LINES := push(REPORT_LINES, "")
+REPORT_LINES := append_lines(REPORT_LINES, ["", "## Largest Files", ""])
 if len(METRICS["largest_files"]) == 0 {
     REPORT_LINES := push(REPORT_LINES, "No code files found.")
 }
@@ -2269,45 +2283,50 @@ if len(METRICS["largest_files"]) > 0 {
     }
 }
 
-REPORT_LINES := push(REPORT_LINES, "")
-REPORT_LINES := push(REPORT_LINES, "---")
-REPORT_LINES := push(REPORT_LINES, "Generated by [Scout](https://github.com/kujolang/scout/): Codebase Intelligence")
+REPORT_LINES := append_lines(REPORT_LINES, [
+    "",
+    "---",
+    "Generated by [Scout](https://github.com/kujolang/scout/): Codebase Intelligence"
+])
 
 REPORT_MD := join(REPORT_LINES, "\n") + "\n"
 
 LLMS_LINES := []
-LLMS_LINES := push(LLMS_LINES, "# " + PROJECT_NAME)
-LLMS_LINES := push(LLMS_LINES, "")
-LLMS_LINES := push(LLMS_LINES, "Scout codebase intelligence summary for coding agents.")
-LLMS_LINES := push(LLMS_LINES, "")
-LLMS_LINES := push(LLMS_LINES, "## Overview")
-LLMS_LINES := push(LLMS_LINES, "")
-LLMS_LINES := push(LLMS_LINES, "- Target: " + TARGET_DISPLAY)
-LLMS_LINES := push(LLMS_LINES, "- Code files: " + to_string(METRICS["total_files"]))
-LLMS_LINES := push(LLMS_LINES, "- Lines: " + to_string(METRICS["total_lines"]))
-LLMS_LINES := push(LLMS_LINES, "- Dependencies: " + to_string(len(DEPENDENCIES)))
-LLMS_LINES := push(LLMS_LINES, "- Routes: " + to_string(len(ROUTES)))
-LLMS_LINES := push(LLMS_LINES, "- Security findings: " + to_string(len(SECURITY_FINDINGS)))
-
-LLMS_LINES := push(LLMS_LINES, "")
-LLMS_LINES := push(LLMS_LINES, "## Languages")
-LLMS_LINES := push(LLMS_LINES, "")
+LLMS_LINES := append_lines(LLMS_LINES, [
+    "# " + PROJECT_NAME,
+    "",
+    "Scout codebase intelligence summary for coding agents.",
+    "",
+    "## Overview",
+    "",
+    "- Target: " + TARGET_DISPLAY,
+    "- Code files: " + to_string(METRICS["total_files"]),
+    "- Lines: " + to_string(METRICS["total_lines"]),
+    "- Dependencies: " + to_string(len(DEPENDENCIES)),
+    "- Routes: " + to_string(len(ROUTES)),
+    "- Security findings: " + to_string(len(SECURITY_FINDINGS)),
+    "",
+    "## Languages",
+    ""
+])
 for lang_name2 in LANGUAGE_KEYS_SORTED {
     LLMS_LINES := push(LLMS_LINES, "- " + lang_name2 + ": " + to_string(METRICS["languages"][lang_name2]))
 }
 LLMS_TXT := join(LLMS_LINES, "\n") + "\n"
 
 AGENT_LINES := []
-AGENT_LINES := push(AGENT_LINES, "# " + PROJECT_NAME)
-AGENT_LINES := push(AGENT_LINES, "")
-AGENT_LINES := push(AGENT_LINES, "## AI Agent Context")
-AGENT_LINES := push(AGENT_LINES, "")
-AGENT_LINES := push(AGENT_LINES, "- Analyze files before modifications.")
-AGENT_LINES := push(AGENT_LINES, "- Follow existing patterns and naming.")
-AGENT_LINES := push(AGENT_LINES, "- Prioritize secure defaults.")
-AGENT_LINES := push(AGENT_LINES, "")
-AGENT_LINES := push(AGENT_LINES, "## Detected Routes")
-AGENT_LINES := push(AGENT_LINES, "")
+AGENT_LINES := append_lines(AGENT_LINES, [
+    "# " + PROJECT_NAME,
+    "",
+    "## AI Agent Context",
+    "",
+    "- Analyze files before modifications.",
+    "- Follow existing patterns and naming.",
+    "- Prioritize secure defaults.",
+    "",
+    "## Detected Routes",
+    ""
+])
 if len(ROUTES) == 0 {
     AGENT_LINES := push(AGENT_LINES, "None")
 }
@@ -2323,36 +2342,39 @@ for s in SECURITY_FINDINGS {
         HIGH_CRIT := HIGH_CRIT + 1
     }
 }
-AGENT_LINES := push(AGENT_LINES, "")
-AGENT_LINES := push(AGENT_LINES, "## Security Notes")
-AGENT_LINES := push(AGENT_LINES, "")
-AGENT_LINES := push(AGENT_LINES, "- High/Critical findings: " + to_string(HIGH_CRIT))
-AGENT_LINES := push(AGENT_LINES, "- Total findings: " + to_string(len(SECURITY_FINDINGS)))
-AGENT_LINES := push(AGENT_LINES, "- Suppressed findings: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)))
+AGENT_LINES := append_lines(AGENT_LINES, [
+    "",
+    "## Security Notes",
+    "",
+    "- High/Critical findings: " + to_string(HIGH_CRIT),
+    "- Total findings: " + to_string(len(SECURITY_FINDINGS)),
+    "- Suppressed findings: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS))
+])
 AGENTS_MD := join(AGENT_LINES, "\n") + "\n"
 
 CHECK_LINES := []
-CHECK_LINES := push(CHECK_LINES, "# Code Review Checklist")
-CHECK_LINES := push(CHECK_LINES, "")
-CHECK_LINES := push(CHECK_LINES, "Scope: " + to_string(METRICS["total_files"]) + " files, " + to_string(METRICS["total_lines"]) + " lines")
-CHECK_LINES := push(CHECK_LINES, "")
-CHECK_LINES := push(CHECK_LINES, "## Architecture")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Structure follows conventions")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Separation of concerns")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Configuration is externalized")
-CHECK_LINES := push(CHECK_LINES, "")
-CHECK_LINES := push(CHECK_LINES, "## Code Quality")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Functions are single-purpose")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Error handling is complete")
-CHECK_LINES := push(CHECK_LINES, "- [ ] No dead code remains")
-CHECK_LINES := push(CHECK_LINES, "")
-CHECK_LINES := push(CHECK_LINES, "## Security")
-CHECK_LINES := push(CHECK_LINES, "- [ ] No hardcoded secrets")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Inputs are validated")
-CHECK_LINES := push(CHECK_LINES, "- [ ] Authentication and authorization are enforced")
+CHECK_LINES := append_lines(CHECK_LINES, [
+    "# Code Review Checklist",
+    "",
+    "Scope: " + to_string(METRICS["total_files"]) + " files, " + to_string(METRICS["total_lines"]) + " lines",
+    "",
+    "## Architecture",
+    "- [ ] Structure follows conventions",
+    "- [ ] Separation of concerns",
+    "- [ ] Configuration is externalized",
+    "",
+    "## Code Quality",
+    "- [ ] Functions are single-purpose",
+    "- [ ] Error handling is complete",
+    "- [ ] No dead code remains",
+    "",
+    "## Security",
+    "- [ ] No hardcoded secrets",
+    "- [ ] Inputs are validated",
+    "- [ ] Authentication and authorization are enforced"
+])
 if len(SECURITY_FINDINGS) > 0 {
-    CHECK_LINES := push(CHECK_LINES, "")
-    CHECK_LINES := push(CHECK_LINES, "Detected findings:")
+    CHECK_LINES := append_lines(CHECK_LINES, ["", "Detected findings:"])
     for f in SECURITY_FINDINGS {
         CHECK_LINES := push(CHECK_LINES, "- [ ] " + f["severity"] + " - " + f["label"] + " at " + f["file"] + ":" + to_string(f["line"]))
     }
@@ -2557,27 +2579,32 @@ SCAN_MANIFEST := {
 
 write_file(OUTPUT + "/scan_manifest.json", to_json(SCAN_MANIFEST))
 
-print("Scanning: " + TARGET)
-print("Output: " + OUTPUT)
-print("Code files analyzed: " + to_string(METRICS["total_files"]))
-print("Dependencies: " + to_string(len(DEPENDENCIES)))
-print("Routes: " + to_string(len(ROUTES)))
-print("Security findings: " + to_string(len(SECURITY_FINDINGS)))
-print("Output profile: " + OUTPUT_PROFILE)
+CLI_LINES := [
+    "Scanning: " + TARGET,
+    "Output: " + OUTPUT,
+    "Code files analyzed: " + to_string(METRICS["total_files"]),
+    "Dependencies: " + to_string(len(DEPENDENCIES)),
+    "Routes: " + to_string(len(ROUTES)),
+    "Security findings: " + to_string(len(SECURITY_FINDINGS)),
+    "Output profile: " + OUTPUT_PROFILE
+]
 if !SKIP_SEC && !SHOW_SUPPRESSED && len(SUPPRESSED_SECURITY_FINDINGS) > 0 {
-    print("Suppressed findings: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)))
+    CLI_LINES := push(CLI_LINES, "Suppressed findings: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)))
 }
 if len(SECURITY_EXPORT_FILES) > 0 {
-    print("Security exports: " + join(SECURITY_EXPORT_FILES, ", "))
+    CLI_LINES := push(CLI_LINES, "Security exports: " + join(SECURITY_EXPORT_FILES, ", "))
 }
 if BASELINE_WRITTEN != "" {
-    print("Baseline written: " + BASELINE_WRITTEN)
+    CLI_LINES := push(CLI_LINES, "Baseline written: " + BASELINE_WRITTEN)
 }
 if KENNEL_INDEX_WRITTEN != "" {
-    print("Kennel index: " + KENNEL_INDEX_WRITTEN)
+    CLI_LINES := push(CLI_LINES, "Kennel index: " + KENNEL_INDEX_WRITTEN)
 }
 if KENNEL_METADATA_WRITTEN != "" {
-    print("Kennel metadata: " + KENNEL_METADATA_WRITTEN)
+    CLI_LINES := push(CLI_LINES, "Kennel metadata: " + KENNEL_METADATA_WRITTEN)
 }
-print("Scan manifest: " + OUTPUT + "/scan_manifest.json")
-print("Done.")
+CLI_LINES := append_lines(CLI_LINES, [
+    "Scan manifest: " + OUTPUT + "/scan_manifest.json",
+    "Done."
+])
+print_lines(CLI_LINES)
