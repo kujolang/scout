@@ -43,6 +43,7 @@ If blocked:
 
 - Prioritize copyable examples over tests: examples should model the most token-efficient idioms we want agents to imitate.
 - Treat README Quick Start and Examples as the canonical user-facing examples.
+- In Kujo output-building code, prefer small local helpers such as `print_lines`, `md_kv`, `md_section`, `md_table_row`, and `kv_line` once repeated print, report, or CLI label/value patterns start to obscure the feature being changed.
 - Treat `tests/fixtures/**` as regression contracts, not style guidance; do not shorten fixtures when explicit output improves contract clarity.
 - Treat `tests/fixtures/test005/snapshots/**` as generated golden output. Do not copy its prose style into docs or examples.
 - Exclude generated/bulk paths from the main sweep unless the task explicitly targets them; document the search exclusions you used.
