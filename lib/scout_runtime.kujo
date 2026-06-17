@@ -236,6 +236,47 @@ func print_lines(lines) {
     }
 }
 
+func error_exit(message) {
+    print("Error: " + message)
+    exit(1)
+}
+
+func missing_option_value(option) {
+    error_exit("missing value for " + option)
+}
+
+func empty_option_value(option) {
+    error_exit("empty value for " + option)
+}
+
+func invalid_expected(name, value, expected) {
+    error_exit("invalid " + name + ": " + to_string(value) + " (expected: " + expected + ")")
+}
+
+func invalid_format_expected(name, value, expected) {
+    error_exit("invalid " + name + " format: " + to_string(value) + " (expected: " + expected + ")")
+}
+
+func md_section(lines, title) {
+    return append_lines(lines, ["", "## " + title, ""])
+}
+
+func md_kv(label, value) {
+    return "- " + label + ": " + to_string(value)
+}
+
+func md_check(text) {
+    return "- [ ] " + text
+}
+
+func md_table_row(cells) {
+    return "| " + join(cells, " | ") + " |"
+}
+
+func kv_line(label, value) {
+    return label + ": " + to_string(value)
+}
+
 ARGS := args()
 
 if file_exists(CONFIG_PATH) {
@@ -304,8 +345,7 @@ if file_exists(CONFIG_PATH) {
 			if has_key(output_doc, "profile") {
 				cfg_profile := normalize_output_profile(output_doc["profile"])
 				if cfg_profile == "" {
-					print("Error: invalid output.profile format: " + to_string(output_doc["profile"]) + " (expected: full|minimal)")
-					exit(1)
+					invalid_format_expected("output.profile", output_doc["profile"], "full|minimal")
 				}
 				OUTPUT_PROFILE := cfg_profile
 			}
@@ -322,8 +362,7 @@ if file_exists(CONFIG_PATH) {
                     cfg_export_format := cfg_export_list[cfg_export_i]
                     normalized_export := normalize_security_export_format(cfg_export_format)
                     if normalized_export == "" {
-                        print("Error: invalid output.security_exports format: " + to_string(cfg_export_format) + " (expected: sarif|jsonl)")
-                        exit(1)
+                        invalid_format_expected("output.security_exports", cfg_export_format, "sarif|jsonl")
                     }
 
                     if has_key(SECURITY_EXPORT_SEEN, normalized_export) == 0 {
@@ -382,8 +421,7 @@ if file_exists(CONFIG_PATH) {
             }
         }
     } except err {
-        print("Error: invalid config.json: " + to_string(err))
-        exit(1)
+        error_exit("invalid config.json: " + to_string(err))
     }
 }
 
@@ -428,14 +466,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         output_value := trim(ARGS[I])
         if output_value == "" {
-            print("Error: empty value for " + a)
-            exit(1)
+            empty_option_value(a)
         }
 
         OUTPUT_ROOT := output_value
@@ -445,14 +481,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         depth_value := trim(ARGS[I])
         if !is_non_negative_integer_text(depth_value) {
-            print("Error: invalid max depth: " + depth_value)
-            exit(1)
+            error_exit("invalid max depth: " + depth_value)
         }
 
         MAX_DEPTH := to_int(depth_value)
@@ -477,14 +511,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         include_cli := trim(ARGS[I])
         if include_cli == "" {
-            print("Error: empty value for " + a)
-            exit(1)
+            empty_option_value(a)
         }
 
         INCLUDE_PATTERNS := push(INCLUDE_PATTERNS, include_cli)
@@ -494,14 +526,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         exclude_cli := trim(ARGS[I])
         if exclude_cli == "" {
-            print("Error: empty value for " + a)
-            exit(1)
+            empty_option_value(a)
         }
 
         EXCLUDE_PATTERNS := push(EXCLUDE_PATTERNS, exclude_cli)
@@ -511,14 +541,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         ignore_cli := trim(ARGS[I])
         if ignore_cli == "" {
-            print("Error: empty value for " + a)
-            exit(1)
+            empty_option_value(a)
         }
 
         IGNORE_FILE := ignore_cli
@@ -528,14 +556,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         path_mode_cli := trim(ARGS[I])
         if path_mode_cli == "" {
-            print("Error: empty value for " + a)
-            exit(1)
+            empty_option_value(a)
         }
 
         PATH_MODE := path_mode_cli
@@ -545,14 +571,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         profile_cli := normalize_output_profile(ARGS[I])
         if profile_cli == "" {
-            print("Error: invalid output profile: " + ARGS[I] + " (expected: full|minimal)")
-            exit(1)
+            invalid_expected("output profile", ARGS[I], "full|minimal")
         }
 
         OUTPUT_PROFILE := profile_cli
@@ -567,14 +591,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         export_cli := normalize_security_export_format(ARGS[I])
         if export_cli == "" {
-            print("Error: invalid security export format: " + ARGS[I] + " (expected: sarif|jsonl)")
-            exit(1)
+            invalid_expected("security export format", ARGS[I], "sarif|jsonl")
         }
 
         if has_key(SECURITY_EXPORT_SEEN, export_cli) == 0 {
@@ -587,14 +609,12 @@ while I < len(ARGS) {
         handled_option := true
         I := I + 1
         if I >= len(ARGS) {
-            print("Error: missing value for " + a)
-            exit(1)
+            missing_option_value(a)
         }
 
         baseline_cli := trim(ARGS[I])
         if baseline_cli == "" {
-            print("Error: empty value for " + a)
-            exit(1)
+            empty_option_value(a)
         }
 
         BASELINE_FILE := baseline_cli
@@ -621,8 +641,7 @@ while I < len(ARGS) {
     }
 
     if starts_with(a, "-") && !handled_option {
-        print("Error: unknown option: " + a)
-        exit(1)
+        error_exit("unknown option: " + a)
     }
 
     if !starts_with(a, "-") {
@@ -633,21 +652,18 @@ while I < len(ARGS) {
 }
 
 if !file_exists(TARGET) {
-    print("Error: target path not found: " + TARGET)
-    exit(1)
+    error_exit("target path not found: " + TARGET)
 }
 
 TARGET_ABS := path_absolute(TARGET)
 
 PATH_MODE := trim(PATH_MODE)
 if PATH_MODE != "relative" && PATH_MODE != "absolute" {
-    print("Error: invalid path mode: " + PATH_MODE + " (expected: relative|absolute)")
-    exit(1)
+    invalid_expected("path mode", PATH_MODE, "relative|absolute")
 }
 
 if OUTPUT_PROFILE != "full" && OUTPUT_PROFILE != "minimal" {
-	print("Error: invalid output profile: " + OUTPUT_PROFILE + " (expected: full|minimal)")
-	exit(1)
+	invalid_expected("output profile", OUTPUT_PROFILE, "full|minimal")
 }
 
 TARGET_DISPLAY := TARGET
@@ -678,8 +694,7 @@ if !SKIP_SEC && BASELINE_PATH != "" && file_exists(BASELINE_PATH) {
             }
         }
     } except err {
-        print("Error: invalid baseline file: " + BASELINE_PATH + ": " + to_string(err))
-        exit(1)
+        error_exit("invalid baseline file: " + BASELINE_PATH + ": " + to_string(err))
     }
 }
 
@@ -699,8 +714,7 @@ if IGNORE_FILE != "" {
                 }
             }
         } except err {
-            print("Error: unable to read ignore file: " + ignore_file_path)
-            exit(1)
+            error_exit("unable to read ignore file: " + ignore_file_path)
         }
     }
 }
@@ -2206,21 +2220,21 @@ REPORT_LINES := append_lines(REPORT_LINES, [
     "",
     "## Scan Summary",
     "",
-    "- Target: `" + TARGET_DISPLAY + "`",
-    "- Total directories discovered: " + to_string(TOTAL_DIRS_SEEN),
-    "- Total files discovered: " + to_string(TOTAL_FILES_SEEN),
-    "- Code files analyzed: " + to_string(METRICS["total_files"]),
-    "- Lines analyzed: " + to_string(METRICS["total_lines"]),
-    "- Bytes analyzed: " + to_string(METRICS["total_size"])
+    md_kv("Target", "`" + TARGET_DISPLAY + "`"),
+    md_kv("Total directories discovered", TOTAL_DIRS_SEEN),
+    md_kv("Total files discovered", TOTAL_FILES_SEEN),
+    md_kv("Code files analyzed", METRICS["total_files"]),
+    md_kv("Lines analyzed", METRICS["total_lines"]),
+    md_kv("Bytes analyzed", METRICS["total_size"])
 ])
 
-REPORT_LINES := append_lines(REPORT_LINES, ["", "## Languages", ""])
+REPORT_LINES := md_section(REPORT_LINES, "Languages")
 for lang_name in LANGUAGE_KEYS_SORTED {
-    REPORT_LINES := push(REPORT_LINES, "- " + lang_name + ": " + to_string(METRICS["languages"][lang_name]) + " files")
+    REPORT_LINES := push(REPORT_LINES, md_kv(lang_name, to_string(METRICS["languages"][lang_name]) + " files"))
 }
 
 if !SKIP_DEPS {
-    REPORT_LINES := append_lines(REPORT_LINES, ["", "## Dependencies", ""])
+    REPORT_LINES := md_section(REPORT_LINES, "Dependencies")
     if len(DEPENDENCIES) == 0 {
         REPORT_LINES := push(REPORT_LINES, "No dependencies detected.")
     }
@@ -2232,23 +2246,23 @@ if !SKIP_DEPS {
 }
 
 if !SKIP_ROUTES {
-    REPORT_LINES := append_lines(REPORT_LINES, ["", "## Routes", ""])
+    REPORT_LINES := md_section(REPORT_LINES, "Routes")
     if len(ROUTES) == 0 {
         REPORT_LINES := push(REPORT_LINES, "No routes discovered.")
     }
     if len(ROUTES) > 0 {
         REPORT_LINES := append_lines(REPORT_LINES, [
-            "| Method | Path | Source |",
-            "|--------|------|--------|"
+            md_table_row(["Method", "Path", "Source"]),
+            md_table_row(["--------", "------", "--------"])
         ])
         for route in ROUTES {
-            REPORT_LINES := push(REPORT_LINES, "| " + route["method"] + " | `" + route["path"] + "` | " + route["source"] + " |")
+            REPORT_LINES := push(REPORT_LINES, md_table_row([route["method"], "`" + route["path"] + "`", route["source"]]))
         }
     }
 }
 
 if !SKIP_SEC {
-    REPORT_LINES := append_lines(REPORT_LINES, ["", "## Security Findings", ""])
+    REPORT_LINES := md_section(REPORT_LINES, "Security Findings")
     if !SHOW_SUPPRESSED && len(SUPPRESSED_SECURITY_FINDINGS) > 0 {
         REPORT_LINES := append_lines(REPORT_LINES, [
             "Suppressed findings hidden: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)) + " (use `--show-suppressed` to include).",
@@ -2260,20 +2274,20 @@ if !SKIP_SEC {
     }
     if len(SECURITY_FINDINGS) > 0 {
         REPORT_LINES := append_lines(REPORT_LINES, [
-            "| Severity | Issue | File | Line |",
-            "|----------|-------|------|------|"
+            md_table_row(["Severity", "Issue", "File", "Line"]),
+            md_table_row(["----------", "-------", "------", "------"])
         ])
         for finding in SECURITY_FINDINGS {
             finding_label := to_string(finding["label"])
             if has_key(finding, "suppressed") && finding["suppressed"] {
                 finding_label := finding_label + " (suppressed)"
             }
-            REPORT_LINES := push(REPORT_LINES, "| " + finding["severity"] + " | " + finding_label + " | `" + finding["file"] + "` | " + to_string(finding["line"]) + " |")
+            REPORT_LINES := push(REPORT_LINES, md_table_row([finding["severity"], finding_label, "`" + finding["file"] + "`", to_string(finding["line"])]))
         }
     }
 }
 
-REPORT_LINES := append_lines(REPORT_LINES, ["", "## Largest Files", ""])
+REPORT_LINES := md_section(REPORT_LINES, "Largest Files")
 if len(METRICS["largest_files"]) == 0 {
     REPORT_LINES := push(REPORT_LINES, "No code files found.")
 }
@@ -2299,18 +2313,18 @@ LLMS_LINES := append_lines(LLMS_LINES, [
     "",
     "## Overview",
     "",
-    "- Target: " + TARGET_DISPLAY,
-    "- Code files: " + to_string(METRICS["total_files"]),
-    "- Lines: " + to_string(METRICS["total_lines"]),
-    "- Dependencies: " + to_string(len(DEPENDENCIES)),
-    "- Routes: " + to_string(len(ROUTES)),
-    "- Security findings: " + to_string(len(SECURITY_FINDINGS)),
+    md_kv("Target", TARGET_DISPLAY),
+    md_kv("Code files", METRICS["total_files"]),
+    md_kv("Lines", METRICS["total_lines"]),
+    md_kv("Dependencies", len(DEPENDENCIES)),
+    md_kv("Routes", len(ROUTES)),
+    md_kv("Security findings", len(SECURITY_FINDINGS)),
     "",
     "## Languages",
     ""
 ])
 for lang_name2 in LANGUAGE_KEYS_SORTED {
-    LLMS_LINES := push(LLMS_LINES, "- " + lang_name2 + ": " + to_string(METRICS["languages"][lang_name2]))
+    LLMS_LINES := push(LLMS_LINES, md_kv(lang_name2, METRICS["languages"][lang_name2]))
 }
 LLMS_TXT := join(LLMS_LINES, "\n") + "\n"
 
@@ -2346,9 +2360,9 @@ AGENT_LINES := append_lines(AGENT_LINES, [
     "",
     "## Security Notes",
     "",
-    "- High/Critical findings: " + to_string(HIGH_CRIT),
-    "- Total findings: " + to_string(len(SECURITY_FINDINGS)),
-    "- Suppressed findings: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS))
+    md_kv("High/Critical findings", HIGH_CRIT),
+    md_kv("Total findings", len(SECURITY_FINDINGS)),
+    md_kv("Suppressed findings", len(SUPPRESSED_SECURITY_FINDINGS))
 ])
 AGENTS_MD := join(AGENT_LINES, "\n") + "\n"
 
@@ -2359,24 +2373,24 @@ CHECK_LINES := append_lines(CHECK_LINES, [
     "Scope: " + to_string(METRICS["total_files"]) + " files, " + to_string(METRICS["total_lines"]) + " lines",
     "",
     "## Architecture",
-    "- [ ] Structure follows conventions",
-    "- [ ] Separation of concerns",
-    "- [ ] Configuration is externalized",
+    md_check("Structure follows conventions"),
+    md_check("Separation of concerns"),
+    md_check("Configuration is externalized"),
     "",
     "## Code Quality",
-    "- [ ] Functions are single-purpose",
-    "- [ ] Error handling is complete",
-    "- [ ] No dead code remains",
+    md_check("Functions are single-purpose"),
+    md_check("Error handling is complete"),
+    md_check("No dead code remains"),
     "",
     "## Security",
-    "- [ ] No hardcoded secrets",
-    "- [ ] Inputs are validated",
-    "- [ ] Authentication and authorization are enforced"
+    md_check("No hardcoded secrets"),
+    md_check("Inputs are validated"),
+    md_check("Authentication and authorization are enforced")
 ])
 if len(SECURITY_FINDINGS) > 0 {
     CHECK_LINES := append_lines(CHECK_LINES, ["", "Detected findings:"])
     for f in SECURITY_FINDINGS {
-        CHECK_LINES := push(CHECK_LINES, "- [ ] " + f["severity"] + " - " + f["label"] + " at " + f["file"] + ":" + to_string(f["line"]))
+        CHECK_LINES := push(CHECK_LINES, md_check(f["severity"] + " - " + f["label"] + " at " + f["file"] + ":" + to_string(f["line"])))
     }
 }
 CHECKLIST_MD := join(CHECK_LINES, "\n") + "\n"
@@ -2580,31 +2594,31 @@ SCAN_MANIFEST := {
 write_file(OUTPUT + "/scan_manifest.json", to_json(SCAN_MANIFEST))
 
 CLI_LINES := [
-    "Scanning: " + TARGET,
-    "Output: " + OUTPUT,
-    "Code files analyzed: " + to_string(METRICS["total_files"]),
-    "Dependencies: " + to_string(len(DEPENDENCIES)),
-    "Routes: " + to_string(len(ROUTES)),
-    "Security findings: " + to_string(len(SECURITY_FINDINGS)),
-    "Output profile: " + OUTPUT_PROFILE
+    kv_line("Scanning", TARGET),
+    kv_line("Output", OUTPUT),
+    kv_line("Code files analyzed", METRICS["total_files"]),
+    kv_line("Dependencies", len(DEPENDENCIES)),
+    kv_line("Routes", len(ROUTES)),
+    kv_line("Security findings", len(SECURITY_FINDINGS)),
+    kv_line("Output profile", OUTPUT_PROFILE)
 ]
 if !SKIP_SEC && !SHOW_SUPPRESSED && len(SUPPRESSED_SECURITY_FINDINGS) > 0 {
-    CLI_LINES := push(CLI_LINES, "Suppressed findings: " + to_string(len(SUPPRESSED_SECURITY_FINDINGS)))
+    CLI_LINES := push(CLI_LINES, kv_line("Suppressed findings", len(SUPPRESSED_SECURITY_FINDINGS)))
 }
 if len(SECURITY_EXPORT_FILES) > 0 {
-    CLI_LINES := push(CLI_LINES, "Security exports: " + join(SECURITY_EXPORT_FILES, ", "))
+    CLI_LINES := push(CLI_LINES, kv_line("Security exports", join(SECURITY_EXPORT_FILES, ", ")))
 }
 if BASELINE_WRITTEN != "" {
-    CLI_LINES := push(CLI_LINES, "Baseline written: " + BASELINE_WRITTEN)
+    CLI_LINES := push(CLI_LINES, kv_line("Baseline written", BASELINE_WRITTEN))
 }
 if KENNEL_INDEX_WRITTEN != "" {
-    CLI_LINES := push(CLI_LINES, "Kennel index: " + KENNEL_INDEX_WRITTEN)
+    CLI_LINES := push(CLI_LINES, kv_line("Kennel index", KENNEL_INDEX_WRITTEN))
 }
 if KENNEL_METADATA_WRITTEN != "" {
-    CLI_LINES := push(CLI_LINES, "Kennel metadata: " + KENNEL_METADATA_WRITTEN)
+    CLI_LINES := push(CLI_LINES, kv_line("Kennel metadata", KENNEL_METADATA_WRITTEN))
 }
 CLI_LINES := append_lines(CLI_LINES, [
-    "Scan manifest: " + OUTPUT + "/scan_manifest.json",
+    kv_line("Scan manifest", OUTPUT + "/scan_manifest.json"),
     "Done."
 ])
 print_lines(CLI_LINES)
