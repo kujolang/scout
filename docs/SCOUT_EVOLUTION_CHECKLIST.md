@@ -25,6 +25,8 @@ Make Scout broadly useful, low-noise, and safe for adoption across different cod
   - Evidence: [.github/workflows/repo-checks.yml](../.github/workflows/repo-checks.yml#L49), [tests/scripts/run_all_scout_tests.sh](../tests/scripts/run_all_scout_tests.sh#L34)
 - Schema contract checks are wired via `jsonschema`; compatibility risk now centers on coverage breadth rather than validator absence.
   - Evidence: [tests/scripts/validate_json_schema.py](../tests/scripts/validate_json_schema.py), [tests/fixtures/schemas](../tests/fixtures/schemas), [.github/workflows/repo-checks.yml](../.github/workflows/repo-checks.yml#L35)
+- Security findings now redact sensitive credential/token/private-key snippets before writing reports, exports, and baseline fingerprints.
+  - Evidence: [lib/security_exports.kujo](../lib/security_exports.kujo), [tests/scripts/test_feat009_security_redaction.sh](../tests/scripts/test_feat009_security_redaction.sh)
 
 ## Tier 0: Correctness and Signal Quality (Do First)
 
@@ -315,6 +317,44 @@ Make Scout broadly useful, low-noise, and safe for adoption across different cod
   - Add CI check for version consistency.
 - Dependencies/unknowns:
   - Choose changelog format.
+
+## Tier 6: Enterprise Hardening and Ecosystem Breadth
+
+### FEAT-008 Enforce symlink traversal boundaries
+- [x] Prevent scans from following outside-root symlink targets into unrelated filesystem content.
+- Implementation expectations:
+  - Keep in-root files scannable.
+  - Do not leak outside-root paths or findings into generated outputs.
+- Acceptance criteria:
+  - Symlinked outside-root files do not appear in file tree, metrics, security findings, SARIF, or JSONL exports.
+- Validation/testing expectations:
+  - Add a fixture with inside-root findings and an outside-root symlink containing secrets.
+- Dependencies/unknowns:
+  - Continue validating behavior against Kujo runtime path semantics.
+
+### FEAT-009 Redact sensitive security finding snippets
+- [x] Redact credential, token, and private-key values before findings are written to reports, machine exports, and baseline fingerprints.
+- Implementation expectations:
+  - Preserve useful labels, paths, line numbers, severities, and key names.
+  - Avoid raw secret values in `README.md`, `intelligence.json`, `security.sarif`, `security.jsonl`, and generated baselines.
+- Acceptance criteria:
+  - Security exports remain useful without serializing discovered secret values.
+- Validation/testing expectations:
+  - Add regression coverage for uppercase credential spellings, redacted snippets, and quoted dangerous-call literals.
+- Dependencies/unknowns:
+  - Future secret detectors should add matching redaction behavior before shipping.
+
+### FEAT-010 Expand dependency manifest coverage
+- [x] Add lightweight dependency extraction for Dart `pubspec`, SwiftPM `Package.swift`, and Elixir `mix.exs`.
+- Implementation expectations:
+  - Keep parsing deterministic and shallow; do not resolve package graphs.
+  - Preserve existing dependency output schema.
+- Acceptance criteria:
+  - Scout identifies dependencies from common Dart, Swift, and Elixir manifests.
+- Validation/testing expectations:
+  - Add purpose-built manifest fixtures and aggregate test coverage.
+- Dependencies/unknowns:
+  - Future ecosystems should follow the same fixture-first pattern.
 
 ## Item Completion Template
 Use this exact block in Work Log for each completed item:
@@ -982,3 +1022,65 @@ Docs updated:
 - docs/SCOUT_EVOLUTION_CHECKLIST.md
 Notes:
 - Snapshot parity evidence includes fixture route matrix and golden snapshots; runtime architecture now uses focused modules with thin entrypoint compatibility preserved.
+
+### FEAT-008 - Enforce symlink traversal boundaries
+Date: 2026-06-19
+Summary: Added aggregate regression coverage that verifies outside-root symlink targets are excluded from file tree, metrics, security findings, SARIF, and JSONL outputs.
+Files changed:
+- tests/scripts/test_feat008_symlink_boundary.sh
+- tests/scripts/run_all_scout_tests.sh
+- docs/SCOUT_EVOLUTION_CHECKLIST.md
+Tests/validation:
+- tests/scripts/test_feat008_symlink_boundary.sh: passed
+- SCOUT_SKIP_SLOW=1 tests/scripts/run_all_scout_tests.sh: passed
+Docs updated:
+- docs/SCOUT_EVOLUTION_CHECKLIST.md
+Notes:
+- Existing symlink boundary coverage was aligned with the new security redaction contract so inside-root findings remain labeled without leaking raw values.
+
+### FEAT-009 - Redact sensitive security finding snippets
+Date: 2026-06-19
+Summary: Redacted credential/token/private-key snippets before report/export/baseline output, made security keyword matching case-insensitive, and generalized dangerous-call matching to avoid quoted-literal false positives.
+Files changed:
+- lib/scout_runtime.kujo
+- lib/security_exports.kujo
+- lib/text_scan.kujo
+- tests/fixtures/feat004/scout-baseline.json
+- tests/fixtures/feat009_security_redaction/app.py
+- tests/fixtures/feat009_security_redaction/danger.js
+- tests/scripts/test_feat009_security_redaction.sh
+- tests/scripts/test_sec001_self_match.sh
+- tests/scripts/test_feat008_symlink_boundary.sh
+- tests/scripts/run_all_scout_tests.sh
+- README.md
+- docs/SCOUT_EVOLUTION_CHECKLIST.md
+Tests/validation:
+- tests/scripts/test_feat009_security_redaction.sh: passed
+- tests/scripts/test_feat008_symlink_boundary.sh: passed
+- SCOUT_SKIP_SLOW=1 tests/scripts/run_all_scout_tests.sh: passed
+Docs updated:
+- README.md
+- docs/SCOUT_EVOLUTION_CHECKLIST.md
+Notes:
+- Baseline fingerprints now use redacted snippets, preventing baselines from becoming long-lived secret stores.
+
+### FEAT-010 - Expand dependency manifest coverage
+Date: 2026-06-19
+Summary: Added deterministic manifest dependency extraction for Dart `pubspec.yaml`/`pubspec.yml`, SwiftPM `Package.swift`, and Elixir `mix.exs`.
+Files changed:
+- lib/scout_runtime.kujo
+- tests/fixtures/feat010_dependency_manifests/pubspec.yaml
+- tests/fixtures/feat010_dependency_manifests/Package.swift
+- tests/fixtures/feat010_dependency_manifests/mix.exs
+- tests/scripts/test_feat010_dependency_manifests.sh
+- tests/scripts/run_all_scout_tests.sh
+- README.md
+- docs/SCOUT_EVOLUTION_CHECKLIST.md
+Tests/validation:
+- tests/scripts/test_feat010_dependency_manifests.sh: passed
+- SCOUT_SKIP_SLOW=1 tests/scripts/run_all_scout_tests.sh: passed
+Docs updated:
+- README.md
+- docs/SCOUT_EVOLUTION_CHECKLIST.md
+Notes:
+- Manifest parsing remains shallow by design; Scout reports direct declarations without resolving transitive package graphs.

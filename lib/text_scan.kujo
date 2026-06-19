@@ -112,34 +112,44 @@ func is_inside_quoted_literal(line, pos) {
     return false
 }
 
-func contains_dangerous_exec_call(line) {
+func contains_unquoted_call(line, call_text) {
     scan_from := 0
+    needle := to_string(call_text)
+    if needle == "" {
+        return false
+    }
+
     while true {
-        exec_pos := find_after(line, "exec(", scan_from)
-        if exec_pos < 0 {
+        call_pos := find_after(line, needle, scan_from)
+        if call_pos < 0 {
             return false
         }
 
-        if is_inside_quoted_literal(line, exec_pos) {
-            scan_from := exec_pos + len("exec(")
+        if is_inside_quoted_literal(line, call_pos) {
+            scan_from := call_pos + len(needle)
             continue
         }
 
-        if exec_pos == 0 {
+        if call_pos == 0 {
             return true
         }
 
-        prev_char := substring(line, exec_pos - 1, exec_pos)
+        prev_char := substring(line, call_pos - 1, call_pos)
         if index_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$", prev_char) < 0 {
             return true
         }
 
-        scan_from := exec_pos + len("exec(")
+        scan_from := call_pos + len(needle)
     }
+}
+
+func contains_dangerous_exec_call(line) {
+    return contains_unquoted_call(line, "exec(")
 }
 
 export find_after := find_after
 export first_quoted_value := first_quoted_value
 export is_escaped_char := is_escaped_char
 export is_inside_quoted_literal := is_inside_quoted_literal
+export contains_unquoted_call := contains_unquoted_call
 export contains_dangerous_exec_call := contains_dangerous_exec_call

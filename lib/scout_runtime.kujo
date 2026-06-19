@@ -2,8 +2,8 @@
 
 from lib.path_filters import basename_from_path, sanitize_slug, normalize_filter_text, pattern_match, any_pattern_match, is_path_within_target, relative_path_from_target, format_output_path
 from lib.sorting import sort_strings_asc, sort_dependencies, sort_routes, sort_security_findings
-from lib.security_exports import build_sarif_security_export, build_jsonl_security_export, build_security_fingerprint
-from lib.text_scan import find_after, first_quoted_value, is_escaped_char, is_inside_quoted_literal, contains_dangerous_exec_call
+from lib.security_exports import build_sarif_security_export, build_jsonl_security_export, redact_security_snippet, build_security_fingerprint
+from lib.text_scan import find_after, first_quoted_value, is_escaped_char, is_inside_quoted_literal, contains_unquoted_call
 
 VERSION := "1.0.0"
 SCOUT_RUNTIME_LOADED := true
@@ -96,7 +96,11 @@ MANIFEST_FILES := {
     "cargo.toml": true,
     "go.mod": true,
     "requirements.txt": true,
-    "Gemfile": true
+    "Gemfile": true,
+    "pubspec.yaml": true,
+    "pubspec.yml": true,
+    "Package.swift": true,
+    "mix.exs": true
 }
 
 IGNORED_DIRS := {
@@ -1322,6 +1326,76 @@ for code_file in CODE_FILES {
                     }
                 }
             }
+
+            if name == "pubspec.yaml" || name == "pubspec.yml" {
+                pub_section := ""
+
+                for pub_line in lines {
+                    pub_trim := trim(pub_line)
+
+                    if pub_trim == "dependencies:" {
+                        pub_section := "dependencies"
+                    }
+                    if pub_trim == "dev_dependencies:" {
+                        pub_section := "dev_dependencies"
+                    }
+                    if pub_trim != "" && !starts_with(pub_line, " ") && !starts_with(pub_line, "\t") && ends_with(pub_trim, ":") && pub_trim != "dependencies:" && pub_trim != "dev_dependencies:" {
+                        pub_section := ""
+                    }
+
+                    if pub_section != "" && (starts_with(pub_line, " ") || starts_with(pub_line, "\t")) {
+                        colon_at := index_of(pub_trim, ":")
+                        if colon_at > 0 {
+                            pub_dep := trim(substring(pub_trim, 0, colon_at))
+                            if pub_dep != "" && pub_dep != "sdk" && pub_dep != "path" && pub_dep != "git" && pub_dep != "version" {
+                                pub_key := "pubspec_" + pub_section + "|" + pub_dep
+                                if has_key(DEP_SEEN, pub_key) == 0 {
+                                    DEP_SEEN[pub_key] := true
+                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "pubspec_" + pub_section, "module": pub_dep, "source": out_path})
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if name == "Package.swift" {
+                for swift_pkg_line in lines {
+                    swift_pkg_trim := trim(swift_pkg_line)
+                    if index_of(swift_pkg_trim, ".package(") >= 0 {
+                        swift_pkg_dep := first_quoted_value(swift_pkg_trim)
+                        if swift_pkg_dep != "" {
+                            swift_pkg_key := "swift_package|" + swift_pkg_dep
+                            if has_key(DEP_SEEN, swift_pkg_key) == 0 {
+                                DEP_SEEN[swift_pkg_key] := true
+                                DEPENDENCIES := push(DEPENDENCIES, {"type": "swift_package", "module": swift_pkg_dep, "source": out_path})
+                            }
+                        }
+                    }
+                }
+            }
+
+            if name == "mix.exs" {
+                for mix_line in lines {
+                    mix_trim := trim(mix_line)
+                    if starts_with(mix_trim, "{:") {
+                        mix_end := index_of(mix_trim, ",")
+                        if mix_end < 0 {
+                            mix_end := index_of(mix_trim, "}")
+                        }
+                        if mix_end > 2 {
+                            mix_dep := trim(substring(mix_trim, 2, mix_end))
+                            if mix_dep != "" {
+                                mix_key := "mix_dep|" + mix_dep
+                                if has_key(DEP_SEEN, mix_key) == 0 {
+                                    DEP_SEEN[mix_key] := true
+                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "mix_dep", "module": mix_dep, "source": out_path})
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if !SKIP_ROUTES {
@@ -2094,30 +2168,33 @@ for code_file in CODE_FILES {
                 }
 
                 if !SKIP_SEC && security_scan_allowed && !inside_security_patterns_definition {
+                    trimmed_lower := lower(trimmed)
                     for s_pattern in SECURITY_PATTERNS {
                         matched := false
                         for s_keyword in s_pattern["match"] {
-                            if s_keyword == "exec(" {
-                                if contains_dangerous_exec_call(trimmed) {
+                            keyword_lower := lower(to_string(s_keyword))
+                            if s_pattern["label"] == "Dangerous code execution function" {
+                                if contains_unquoted_call(trimmed_lower, keyword_lower) {
                                     matched := true
                                     break
                                 }
                             } else {
-                                if index_of(trimmed, s_keyword) >= 0 {
+                                if index_of(trimmed_lower, keyword_lower) >= 0 {
                                     matched := true
                                     break
                                 }
                             }
                         }
                         if matched {
+                            finding_snippet := redact_security_snippet(trimmed, s_pattern["label"])
                             finding_entry := {
                                 "file": out_path,
                                 "line": line_num,
                                 "label": s_pattern["label"],
                                 "severity": s_pattern["severity"],
-                                "snippet": trimmed
+                                "snippet": finding_snippet
                             }
-                            finding_entry["fingerprint"] := build_security_fingerprint(out_path, line_num, s_pattern["label"], s_pattern["severity"], trimmed)
+                            finding_entry["fingerprint"] := build_security_fingerprint(out_path, line_num, s_pattern["label"], s_pattern["severity"], finding_snippet)
 
                             ALL_SECURITY_FINDINGS := push(ALL_SECURITY_FINDINGS, finding_entry)
 

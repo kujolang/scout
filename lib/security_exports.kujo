@@ -129,6 +129,37 @@ func build_jsonl_security_export(findings) {
     return join(jsonl_lines, "\n") + "\n"
 }
 
+func redact_security_snippet(snippet, label) {
+    snippet_text := trim(to_string(snippet))
+    label_text := to_string(label)
+
+    if label_text == "Embedded private key" {
+        return "<redacted private key material>"
+    }
+
+    if label_text == "Hardcoded credential" || label_text == "Hardcoded token" {
+        sep_pos := index_of(snippet_text, "=")
+        sep_char := "="
+
+        colon_pos := index_of(snippet_text, ":")
+        if colon_pos >= 0 && (sep_pos < 0 || colon_pos < sep_pos) {
+            sep_pos := colon_pos
+            sep_char := ":"
+        }
+
+        if sep_pos >= 0 {
+            prefix := trim(substring(snippet_text, 0, sep_pos))
+            if prefix != "" {
+                return prefix + sep_char + " <redacted>"
+            }
+        }
+
+        return "<redacted " + lower(label_text) + ">"
+    }
+
+    return snippet_text
+}
+
 func build_security_fingerprint(file_path, line_number, label, severity, snippet) {
     rule_id := security_rule_id(to_string(label))
     fp_file := trim(to_string(file_path))
@@ -143,4 +174,5 @@ export security_rule_id := security_rule_id
 export security_sarif_level := security_sarif_level
 export build_sarif_security_export := build_sarif_security_export
 export build_jsonl_security_export := build_jsonl_security_export
+export redact_security_snippet := redact_security_snippet
 export build_security_fingerprint := build_security_fingerprint

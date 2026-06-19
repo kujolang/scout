@@ -3,6 +3,6 @@
   "generated_at": "fixture",
   "target": "tests/fixtures/feat004",
   "fingerprints": [
-    "SCOUT-HARDCODED-CREDENTIAL|src/app.py|1|high|password = \"known-secret\""
+    "SCOUT-HARDCODED-CREDENTIAL|src/app.py|1|high|password= <redacted>"
   ]
 }

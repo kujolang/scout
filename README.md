@@ -81,6 +81,9 @@ Parses dependency signals from both source code and ecosystem manifests:
 - **Ruby**: `require`, `require_relative`, `gem`, plus `Gemfile` `gem` entries
 - **Java/Kotlin**: `import`, `package`
 - **Haskell/Zig/Swift/Dart**: source import parsing
+- **Dart**: `pubspec.yaml` / `pubspec.yml` dependencies and dev dependencies
+- **Swift**: SwiftPM `.package(...)` entries in `Package.swift`
+- **Elixir**: Mix dependency tuples in `mix.exs`
 - **Python pip**: `requirements.txt` and `requirements-*.txt`
 - **Kujo**: `import X`, `from X import Y`, quoted imports
 
@@ -96,6 +99,8 @@ Finds HTTP route definitions in popular frameworks:
 
 ### Security Smell Detection
 Scans for a baseline set of security patterns: hardcoded credentials/tokens, embedded keys, dangerous execution functions (`eval`, `exec`, `system`), XSS sinks, insecure deserialization, and weak hashes. Findings are categorized by severity (critical / high / medium / low).
+
+Security matching is case-insensitive for common credential/token spellings, dangerous-call matching ignores quoted literals and method-style false positives, and sensitive snippets are redacted before they are written to Markdown, JSON, SARIF, JSONL, baseline fingerprints, or manifests.
 
 ### Documentation & Context Generation
 Generates standard output files plus optional security exports:
@@ -257,7 +262,7 @@ Most extension work happens in `lib/scout_runtime.kujo` and helper modules under
 
 - Language and manifest discovery: update `LANGUAGE_MAP` and `MANIFEST_FILES`
 - Route detection: extend language-specific route pattern blocks in the main scan loop
-- Security detection: extend `SECURITY_PATTERNS` and supporting helper logic
+- Security detection: extend `SECURITY_PATTERNS`, redaction rules, and supporting helper logic
 - New artifact outputs: add payload builders and write steps near the output section
 - CLI surface area: add flags in the argument parser and mirror defaults in `config.json`
 

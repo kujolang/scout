@@ -28,7 +28,7 @@ if [[ "$findings_len" -ne 1 ]]; then
 fi
 
 snippet="$(jq -r '.security_findings[0].snippet' "$json_path")"
-if [[ "$snippet" != *'password = "real-secret"'* ]]; then
+if [[ "$snippet" != 'password= <redacted>' ]]; then
 	echo "Unexpected finding snippet: $snippet"
 	exit 1
 fi

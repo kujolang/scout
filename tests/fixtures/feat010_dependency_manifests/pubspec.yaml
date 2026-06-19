@@ -1,0 +1,9 @@
+name: scout_manifest_fixture
+
+dependencies:
+  http: ^1.2.0
+  path:
+    path: ../local_path
+
+dev_dependencies:
+  devtools: ^2.30.0

@@ -27,6 +27,8 @@ tests=(
 	tests/scripts/test_feat006_kennel_metadata.sh
 	tests/scripts/test_feat007_scan_manifest.sh
 	tests/scripts/test_feat008_symlink_boundary.sh
+	tests/scripts/test_feat009_security_redaction.sh
+	tests/scripts/test_feat010_dependency_manifests.sh
 	tests/scripts/test_test001_fixture_suite.sh
 	tests/scripts/test_test002_route_matrix.sh
 	tests/scripts/test_test003_security_matrix.sh

@@ -139,13 +139,23 @@ if grep -Fq "phase10-placeholder-secret-outside-root" "$jsonl_path" || grep -Fq 
 	exit 1
 fi
 
-if ! grep -Fq "phase10-placeholder-secret-inside-root" "$sarif_path" || ! grep -Fq "phase10-placeholder-token-inside-root" "$sarif_path"; then
-	echo "Expected inside-root secret findings in SARIF export"
+if grep -Fq "phase10-placeholder-secret-inside-root" "$sarif_path" || grep -Fq "phase10-placeholder-token-inside-root" "$sarif_path"; then
+	echo "Inside-root raw secret leaked into SARIF export"
 	exit 1
 fi
 
-if ! grep -Fq "phase10-placeholder-secret-inside-root" "$jsonl_path" || ! grep -Fq "phase10-placeholder-token-inside-root" "$jsonl_path"; then
-	echo "Expected inside-root secret findings in JSONL export"
+if grep -Fq "phase10-placeholder-secret-inside-root" "$jsonl_path" || grep -Fq "phase10-placeholder-token-inside-root" "$jsonl_path"; then
+	echo "Inside-root raw secret leaked into JSONL export"
+	exit 1
+fi
+
+if ! grep -Fq "Hardcoded credential" "$sarif_path" || ! grep -Fq "Hardcoded token" "$sarif_path"; then
+	echo "Expected redacted inside-root finding labels in SARIF export"
+	exit 1
+fi
+
+if ! grep -Fq "Hardcoded credential" "$jsonl_path" || ! grep -Fq "Hardcoded token" "$jsonl_path"; then
+	echo "Expected redacted inside-root finding labels in JSONL export"
 	exit 1
 fi
 
