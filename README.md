@@ -1,5 +1,9 @@
 # Scout
 
+[![Version](https://img.shields.io/badge/version-1.0.0-black)](https://github.com/kujolang/scout)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![built with Kujo](https://img.shields.io/badge/built%20with-Kujo-white.svg)](https://github.com/kujolang/kujo)
+
 Scout is a codebase intelligence tool built in [Kujo](https://github.com/kujolang/kujo) — it turns a local repository into an agent-readable context pack by mapping structure, dependencies, routes, and risk into structured outputs.
 
 It helps agents and humans start from the same map of a codebase: file tree, language breakdown, dependency graph, route/API discovery, security smell detection, review checklist, and reviewable context files. Scout packages repository state; it does not replace human review or guarantee perfect understanding.
