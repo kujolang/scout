@@ -30,3 +30,4 @@ kujo-intel/
 kujo-intel*/
 results/
 output/
+.loop-engineering/
