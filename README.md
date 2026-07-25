@@ -225,10 +225,10 @@ Run the full suite (including slower tests):
 tests/scripts/run_all_scout_tests.sh
 ```
 
-Force a specific Kujo runtime (optional):
+Force a non-default Kujo runtime only when needed:
 
 ```bash
-KUJO_BIN=kujo tests/scripts/run_all_scout_tests.sh
+KUJO_BIN=/path/to/kujo tests/scripts/run_all_scout_tests.sh
 ```
 
 Run a fast path for local iteration (skips slow ARC-002 root scan):
