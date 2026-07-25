@@ -1,0 +1,10 @@
+# Scout kujo.toml - Kujo project configuration
+
+[project]
+name = "scout"
+version = "1.0.0"
+description = "Repository intelligence and context-pack generator for Kujo ecosystem review."
+
+[kujo]
+minimum_version = "0.1.0"
+entry = "scout.kujo"

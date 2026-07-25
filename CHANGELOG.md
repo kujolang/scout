@@ -7,6 +7,7 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 ## [Unreleased]
 
 ### Added
+- Added launch-readiness Spec, Eval suite, examples surface, and Kujo/Kennel manifests for prelaunch review gates.
 - Added redacted security finding output so credential, token, and private-key values are not serialized into reports, machine exports, or baseline fingerprints.
 - Added dependency manifest extraction for Dart `pubspec.yaml`/`pubspec.yml`, SwiftPM `Package.swift`, and Elixir `mix.exs`.
 - Added regression coverage for secret redaction and expanded dependency manifests.

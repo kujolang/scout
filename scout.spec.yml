@@ -1,0 +1,67 @@
+# Spec - Scout launch readiness review
+
+name: "Scout launch readiness review"
+goal: "Keep Scout locally release-ready as a deterministic repository intelligence and context-pack generator for Kujo ecosystem review."
+version: "0.1.0"
+background: "Scout is part of the Kujo prelaunch ecosystem review. Its readiness claim is limited to local and CI-oriented repository scanning, not a guarantee of security, correctness, or complete codebase understanding."
+scope: "Repository-local CLI behavior, fixture-backed analyzer tests, version consistency, generated context-pack artifacts, release-process documentation, and launch evidence capture."
+non_goals:
+  - "Publishing packages or public releases"
+  - "Hosted scanning services"
+  - "Claiming that Scout replaces human review or target-environment security assessment"
+relevant_systems:
+  - "Kujo runtime"
+  - "Scout CLI"
+  - "Scout regression fixtures"
+  - "prelaunch launch evidence packet"
+likely_files:
+  - "README.md"
+  - "scout.kujo"
+  - "config.json"
+  - "docs/RELEASE_PROCESS.md"
+  - "tests/scripts/run_all_scout_tests.sh"
+acceptance_criteria:
+  - "README scope remains clear that Scout packages repository signals and does not replace review."
+  - "Version metadata stays aligned between scout.kujo and config.json."
+  - "Fast and full Scout regression suites pass locally."
+  - "A self-scan produces a current scan manifest and machine-readable context artifacts."
+  - "External release actions are recorded as blockers instead of performed locally."
+eval_requirements:
+  - description: "Verify Kujo, jq, and jsonschema prerequisites."
+    check_type: "command"
+    params:
+      command: "kujo run --help >/dev/null && jq --version && python3 -c \"import jsonschema; print(jsonschema.__version__)\""
+  - description: "Run Scout self-scan in quick mode."
+    check_type: "command"
+    params:
+      command: "kujo run scout.kujo -- . --quick"
+  - description: "Run the aggregate Scout regression suite."
+    check_type: "command"
+    params:
+      command: "tests/scripts/run_all_scout_tests.sh"
+  - description: "Verify version consistency."
+    check_type: "command"
+    params:
+      command: "tests/scripts/check_version_consistency.sh"
+risks:
+  - risk: "Security findings are heuristic and can produce false positives or false negatives."
+    mitigation: "Keep README wording explicit that Scout surfaces review signals and does not prove safety."
+    severity: "medium"
+  - risk: "Full-suite confidence can drift if only fast tests are run."
+    mitigation: "Run the full regression suite before launch-ready review and record output in central evidence."
+    severity: "medium"
+dependencies:
+  - "kujo on PATH"
+  - "jq on PATH"
+  - "python3 with jsonschema"
+review_expectations:
+  - "Review generated scan manifests and any security findings as signals, not conclusive proof."
+  - "Review release-process docs before tagging or publishing."
+human_approval_points:
+  - "Before publishing packages or public releases"
+  - "Before treating Scout findings as authoritative launch sign-off"
+priority: "high"
+tags:
+  - "kujo"
+  - "scout"
+  - "launch-readiness"

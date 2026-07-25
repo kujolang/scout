@@ -1,0 +1,28 @@
+[package]
+name = "scout"
+version = "1.0.0"
+description = "Repository intelligence and context-pack generator for Kujo ecosystem review."
+license = "MIT"
+authors = ["Kujolang <contact@kujolang.ai"]
+repository = "https://github.com/kujolang/scout"
+keywords = ["kujo", "repository", "context", "developer-tools", "dogfood"]
+categories = ["developer-tools"]
+readme = "README.md"
+
+[package.status]
+stage = "experimental"
+stability = "early"
+public_api = false
+notes = "Local/CI-oriented dogfood build. Scout surfaces review signals and does not replace human review."
+
+[kujo]
+minimum_version = "0.1.0"
+entry = "scout.kujo"
+sources = ["lib", "."]
+includes = ["README.md", "docs", "tests", "examples", "config.json"]
+excludes = [".git", "results", "tests/tmp", "node_modules", "dist", "build"]
+
+[build]
+command = ""
+output = "dist"
+artifacts = []

@@ -1,0 +1,27 @@
+{
+  "name": "scout-launch-readiness",
+  "version": "0.1.0",
+  "tests": [
+    {
+      "name": "Scout version command succeeds",
+      "check": "command_succeeds",
+      "params": {
+        "command": "kujo run scout.kujo -- --version"
+      }
+    },
+    {
+      "name": "Scout quick self-scan succeeds",
+      "check": "command_succeeds",
+      "params": {
+        "command": "kujo run scout.kujo -- . --quick -o tests/tmp/scout-self-scan"
+      }
+    },
+    {
+      "name": "Scout manifest metadata exists",
+      "check": "file_exists",
+      "params": {
+        "path": "kennel.toml"
+      }
+    }
+  ]
+}
