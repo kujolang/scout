@@ -909,7 +909,7 @@ Docs updated:
 - docs/CONTRIBUTING_SCOUT.md
 - docs/SCOUT_EVOLUTION_CHECKLIST.md
 Notes:
-- Documentation now includes runtime pinning guidance (`KUJO_BIN=/absolute/path/to/kujo ...`) for machines with multiple Kujo binaries.
+- Documentation now includes runtime pinning guidance (`KUJO_BIN=kujo ...`) for machines with multiple Kujo binaries.
 
 ### OPS-003 - Pin Kujo compatibility strategy in CI
 Date: 2026-05-28

@@ -88,7 +88,7 @@ python3 -m pip install --user jsonschema
 If multiple Kujo binaries exist on the machine, pin the runtime for test runs:
 
 ```bash
-KUJO_BIN=/absolute/path/to/kujo tests/scripts/run_all_scout_tests.sh
+KUJO_BIN=kujo tests/scripts/run_all_scout_tests.sh
 ```
 
 CI uses a pinned Kujo runtime tag (`SCOUT_CI_KUJO_REF` in `.github/workflows/repo-checks.yml`) to prevent version/source drift.
