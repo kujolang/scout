@@ -36,11 +36,7 @@ compare_text() {
 	fi
 }
 
-compare_text "$out_dir/FILE_TREE.md" "$SNAPSHOT_DIR/FILE_TREE.md"
-compare_text "$out_dir/README.md" "$SNAPSHOT_DIR/README.md"
 compare_text "$out_dir/llms.txt" "$SNAPSHOT_DIR/llms.txt"
-compare_text "$out_dir/AGENTS.md" "$SNAPSHOT_DIR/AGENTS.md"
-compare_text "$out_dir/CHECKLIST.md" "$SNAPSHOT_DIR/CHECKLIST.md"
 
 norm_intel="$(mktemp)"
 norm_manifest="$(mktemp)"

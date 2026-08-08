@@ -10,10 +10,10 @@ categories = ["developer-tools"]
 readme = "README.md"
 
 [package.status]
-stage = "experimental"
-stability = "early"
-public_api = false
-notes = "Local/CI-oriented dogfood build. Scout surfaces review signals and does not replace human review."
+stage = "production"
+stability = "stable"
+public_api = true
+notes = "Stable local and CI repository-intelligence surface. Scout surfaces review signals and does not replace human review."
 
 [kujo]
 minimum_version = "0.1.0"

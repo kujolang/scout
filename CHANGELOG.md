@@ -6,6 +6,8 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-08
+
 ### Added
 - Added launch-readiness Spec, Eval suite, examples surface, and Kujo/Kennel manifests for prelaunch review gates.
 - Added redacted security finding output so credential, token, and private-key values are not serialized into reports, machine exports, or baseline fingerprints.
