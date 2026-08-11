@@ -73,26 +73,37 @@ func pattern_match(text, pattern) {
         return true
     }
 
-    if starts_with(rule, "*") && ends_with(rule, "*") && len(rule) > 2 {
-        inner := substring(rule, 1, len(rule) - 1)
-        return index_of(target_text, inner) >= 0
-    }
-
-    if starts_with(rule, "*") && len(rule) > 1 {
-        suffix := substring(rule, 1, len(rule))
-        return ends_with(target_text, suffix)
-    }
-
-    if ends_with(rule, "*") && len(rule) > 1 {
-        prefix := substring(rule, 0, len(rule) - 1)
-        return starts_with(target_text, prefix)
-    }
-
     if index_of(rule, "*") < 0 {
         return target_text == rule
     }
 
-    return index_of(target_text, replace(rule, "*", "")) >= 0
+    text_i := 0
+    rule_i := 0
+    star_i := -1
+    star_text_i := 0
+
+    while text_i < len(target_text) {
+        if rule_i < len(rule) && substring(rule, rule_i, rule_i + 1) == substring(target_text, text_i, text_i + 1) {
+            text_i := text_i + 1
+            rule_i := rule_i + 1
+        } else if rule_i < len(rule) && substring(rule, rule_i, rule_i + 1) == "*" {
+            star_i := rule_i
+            star_text_i := text_i
+            rule_i := rule_i + 1
+        } else if star_i >= 0 {
+            star_text_i := star_text_i + 1
+            text_i := star_text_i
+            rule_i := star_i + 1
+        } else {
+            return false
+        }
+    }
+
+    while rule_i < len(rule) && substring(rule, rule_i, rule_i + 1) == "*" {
+        rule_i := rule_i + 1
+    }
+
+    return rule_i == len(rule)
 }
 
 func any_pattern_match(text, patterns) {

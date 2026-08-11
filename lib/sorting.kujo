@@ -44,6 +44,28 @@ func security_sort_key(finding) {
     return security_severity_rank(to_string(finding["severity"])) + "|" + to_string(finding["file"]) + "|" + to_string(finding["line"])
 }
 
+func security_finding_after(left, right) {
+    left_rank := security_severity_rank(to_string(left["severity"]))
+    right_rank := security_severity_rank(to_string(right["severity"]))
+    if left_rank != right_rank {
+        return left_rank > right_rank
+    }
+
+    left_file := to_string(left["file"])
+    right_file := to_string(right["file"])
+    if left_file != right_file {
+        return left_file > right_file
+    }
+
+    left_line := to_int(left["line"])
+    right_line := to_int(right["line"])
+    if left_line != right_line {
+        return left_line > right_line
+    }
+
+    return to_string(left["label"]) > to_string(right["label"])
+}
+
 func sort_dependencies(items) {
     sorted := []
     for item in items {
@@ -97,9 +119,8 @@ func sort_security_findings(items) {
     i := 1
     while i < len(sorted) {
         key_item := sorted[i]
-        key_sort := security_sort_key(key_item)
         j := i - 1
-        while j >= 0 && security_sort_key(sorted[j]) > key_sort {
+        while j >= 0 && security_finding_after(sorted[j], key_item) {
             sorted[j + 1] := sorted[j]
             j := j - 1
         }

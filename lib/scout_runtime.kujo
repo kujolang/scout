@@ -950,6 +950,23 @@ for code_file in CODE_FILES {
 
         if !SKIP_DEPS {
             if name == "package.json" {
+                try {
+                    pkg_doc := parse_json(content)
+                    for pkg_section_name in ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] {
+                        if has_key(pkg_doc, pkg_section_name) && type(pkg_doc[pkg_section_name]) == "dict" {
+                            for pkg_dep_name in keys(pkg_doc[pkg_section_name]) {
+                                pkg_json_key := "npm_" + pkg_section_name + "|" + pkg_dep_name
+                                if has_key(DEP_SEEN, pkg_json_key) == 0 {
+                                    DEP_SEEN[pkg_json_key] := true
+                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "npm_" + pkg_section_name, "module": pkg_dep_name, "source": out_path})
+                                }
+                            }
+                        }
+                    }
+                } except err {
+                    # The line parser below preserves best-effort behavior for malformed manifests.
+                }
+
                 pkg_section := ""
                 for pkg_line in lines {
                     pkg_trim := trim(pkg_line)
@@ -997,6 +1014,25 @@ for code_file in CODE_FILES {
             }
 
             if name == "composer.json" {
+                try {
+                    composer_doc := parse_json(content)
+                    for composer_section_name in ["require", "require-dev"] {
+                        if has_key(composer_doc, composer_section_name) && type(composer_doc[composer_section_name]) == "dict" {
+                            for composer_dep_name in keys(composer_doc[composer_section_name]) {
+                                if composer_dep_name != "php" && !starts_with(composer_dep_name, "ext-") && !starts_with(composer_dep_name, "lib-") {
+                                    composer_json_key := "composer_" + composer_section_name + "|" + composer_dep_name
+                                    if has_key(DEP_SEEN, composer_json_key) == 0 {
+                                        DEP_SEEN[composer_json_key] := true
+                                        DEPENDENCIES := push(DEPENDENCIES, {"type": "composer_" + composer_section_name, "module": composer_dep_name, "source": out_path})
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } except err {
+                    # The line parser below preserves best-effort behavior for malformed manifests.
+                }
+
                 composer_section := ""
                 for composer_line in lines {
                     composer_trim := trim(composer_line)
@@ -1412,7 +1448,9 @@ for code_file in CODE_FILES {
                         }
                     }
 
-                    if ends_with(route_path_file, "/index") {
+                    if route_path_file == "index" {
+                        route_path_file := ""
+                    } else if ends_with(route_path_file, "/index") {
                         route_path_file := substring(route_path_file, 0, len(route_path_file) - len("/index"))
                     }
 
@@ -1435,6 +1473,13 @@ for code_file in CODE_FILES {
                     app_api_pos := index_of(path, "/app/api/")
                     app_api_tail := substring(path, app_api_pos + len("/app/api/"), len(path))
                     app_route_path := app_api_tail
+
+                    for root_route_file in ["route.tsx", "route.ts", "route.jsx", "route.js", "route.mjs", "route.cjs"] {
+                        if app_route_path == root_route_file {
+                            app_route_path := ""
+                            break
+                        }
+                    }
 
                     for route_file in ["/route.tsx", "/route.ts", "/route.jsx", "/route.js", "/route.mjs", "/route.cjs"] {
                         if ends_with(app_route_path, route_file) {
@@ -1469,6 +1514,7 @@ for code_file in CODE_FILES {
             security_scan_allowed := false
         }
         inside_security_patterns_definition := false
+        inside_go_import_block := false
         for line in lines {
             line_num := line_num + 1
             trimmed := trim(line)
@@ -1482,19 +1528,21 @@ for code_file in CODE_FILES {
                     if lang == "Python" {
                         if starts_with(trimmed, "import ") {
                             dep_part := trim(substring(trimmed, 7, len(trimmed)))
-                            dep_words := split(dep_part, " ")
-                            dep_module := ""
-                            for dw in dep_words {
-                                if trim(dw) != "" {
-                                    dep_module := trim(dw)
-                                    break
+                            for dep_segment in split(dep_part, ",") {
+                                dep_words := split(trim(dep_segment), " ")
+                                dep_module := ""
+                                for dw in dep_words {
+                                    if trim(dw) != "" {
+                                        dep_module := trim(dw)
+                                        break
+                                    }
                                 }
-                            }
-                            if dep_module != "" {
-                                dep_key := "import|" + dep_module
-                                if has_key(DEP_SEEN, dep_key) == 0 {
-                                    DEP_SEEN[dep_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "import", "module": dep_module, "source": out_path})
+                                if dep_module != "" {
+                                    dep_key := "import|" + dep_module
+                                    if has_key(DEP_SEEN, dep_key) == 0 {
+                                        DEP_SEEN[dep_key] := true
+                                        DEPENDENCIES := push(DEPENDENCIES, {"type": "import", "module": dep_module, "source": out_path})
+                                    }
                                 }
                             }
                         }
@@ -1544,6 +1592,9 @@ for code_file in CODE_FILES {
                                 }
                             }
                             if dep_module3 != "" {
+                                if ends_with(dep_module3, ";") {
+                                    dep_module3 := substring(dep_module3, 0, len(dep_module3) - 1)
+                                }
                                 dep_key4 := "use|" + dep_module3
                                 if has_key(DEP_SEEN, dep_key4) == 0 {
                                     DEP_SEEN[dep_key4] := true
@@ -1600,6 +1651,21 @@ for code_file in CODE_FILES {
                     }
 
                     if lang == "Go" {
+                        if trimmed == "import (" {
+                            inside_go_import_block := true
+                        } else if inside_go_import_block && trimmed == ")" {
+                            inside_go_import_block := false
+                        } else if inside_go_import_block {
+                            dep_module_block := first_quoted_value(trimmed)
+                            if dep_module_block != "" {
+                                dep_key_block := "go_import|" + dep_module_block
+                                if has_key(DEP_SEEN, dep_key_block) == 0 {
+                                    DEP_SEEN[dep_key_block] := true
+                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "go_import", "module": dep_module_block, "source": out_path})
+                                }
+                            }
+                        }
+
                         if starts_with(trimmed, "import \"") {
                             dep_module8 := ""
                             g1 := index_of(trimmed, "\"")
@@ -1750,6 +1816,9 @@ for code_file in CODE_FILES {
                             }
 
                             dep_part8 := trim(substring(trimmed, start_at, len(trimmed)))
+                            if dep_kind == "jvm_import" && starts_with(dep_part8, "static ") {
+                                dep_part8 := trim(substring(dep_part8, 7, len(dep_part8)))
+                            }
                             dep_words8 := split(dep_part8, " ")
                             dep_module10 := ""
                             for dw8 in dep_words8 {
