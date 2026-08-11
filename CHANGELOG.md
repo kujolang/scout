@@ -6,6 +6,13 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 
 ## [Unreleased]
 
+### Fixed
+- Fixed compact `package.json` and `composer.json` dependency extraction.
+- Fixed normalization of comma-separated Python imports, PHP `use` statements, Go import blocks, and JVM static imports.
+- Fixed root-route discovery for Next.js Pages Router and App Router APIs.
+- Fixed middle-position wildcard matching in include/exclude globs.
+- Fixed numeric line ordering for security findings.
+
 ## [1.0.0] - 2026-08-08
 
 ### Added
