@@ -82,15 +82,16 @@ secrets.mkdir()
     'password = "hardening-secret-one"; eval(user_input)\n'
     'consume("hardening-secret-two", password = supplied)\n'
     'token = "hardening-secret-three"; digest = hashlib.md5(data)\n'
+    'consume unquotedsecretmarker password = supplied\n'
 )
 result, data, directory = scan(secrets, "redaction", "--security-export", "sarif",
                                "--security-export", "jsonl", "--write-baseline")
 check(result.returncode == 0, "redaction scan must succeed")
 if data:
-    check(len(data["security_findings"]) == 5, "redaction must preserve all five findings")
+    check(len(data["security_findings"]) == 6, "redaction must preserve all six findings")
     texts = [p.read_text() for p in directory.rglob("*") if p.is_file()]
     texts.append((secrets / "scout-baseline.json").read_text())
-    check(all("hardening-secret-" not in text for text in texts),
+    check(all("hardening-secret-" not in text and "unquotedsecretmarker" not in text for text in texts),
           "sensitive line leaks through another rule or unsafe prefix")
 
 manifests = WORK / "manifests"

@@ -42,3 +42,10 @@ It records current work; it does not reconstruct historical checklist entries.
   two-job and serial attempts. Available Kujo 1.3.1 binaries cover Scout verification;
   the audit distinguishes this blocker from passing local functional checks.
 - Updated contributor guidance and the repository-local audit/measurement receipts.
+
+### 2026-09-07 — final redaction review
+
+- Restricted retained assignment prefixes to identifier/property characters after an
+  optional recognized declaration; arbitrary unquoted multiword prefixes are redacted.
+- Expanded the security fixture to six retained findings and reran all 25 scripts on
+  the available release Kujo 1.3.1 binary. No golden snapshots changed.

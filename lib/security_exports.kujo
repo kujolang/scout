@@ -150,9 +150,16 @@ func redact_security_snippet(snippet, label) {
         if sep_pos >= 0 {
             prefix := trim(substring(snippet_text, 0, sep_pos))
             # Only retain a simple assignment name, never arbitrary source before '='.
-            safe_prefix := prefix != ""
-            for prefix_char in split(prefix, "") {
-                if index_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$ ", prefix_char) < 0 {
+            prefix_name := prefix
+            for declaration in ["const ", "let ", "var ", "export "] {
+                if starts_with(prefix_name, declaration) {
+                    prefix_name := trim(substring(prefix_name, len(declaration), len(prefix_name)))
+                    break
+                }
+            }
+            safe_prefix := prefix_name != ""
+            for prefix_char in split(prefix_name, "") {
+                if index_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$", prefix_char) < 0 {
                     safe_prefix := false
                 }
             }
