@@ -19,7 +19,10 @@ KUJO = str(pathlib.Path(sys.argv[1]).resolve())
 REF = sys.argv[2]
 DEST = pathlib.Path(sys.argv[3]).resolve()
 FILES = ['scout.kujo', 'config.json', *[str(p.relative_to(ROOT)) for p in (ROOT / 'lib').glob('*.kujo')]]
-report = {'baseline_ref': REF, 'runtime': subprocess.check_output([KUJO, '--version'], text=True).strip(),
+report = {'baseline_ref': REF,
+          'candidate_ref': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+          'source_sha256': {},
+          'runtime': subprocess.check_output([KUJO, '--version'], text=True).strip(),
           'runtime_binary_sha256': hashlib.sha256(pathlib.Path(KUJO).read_bytes()).hexdigest(),
           'platform': platform.platform(),
           'samples_per_case': 3, 'cases': {}}
@@ -45,6 +48,8 @@ with tempfile.TemporaryDirectory(prefix='scout-benchmark-') as work:
             else:
                 shutil.copyfile(ROOT / name, output)
         shutil.copyfile(ROOT / 'tests/fixtures/hardening/sorting.kujo', code / 'sorting.kujo')
+        report['source_sha256'][version] = {
+            name: hashlib.sha256((code / name).read_bytes()).hexdigest() for name in FILES}
         for case in ('sort512', 'scan-full', 'scan-minimal'):
             samples = []
             for sample in range(3):

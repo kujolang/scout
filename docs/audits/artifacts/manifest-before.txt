@@ -1,0 +1,1 @@
+FAIL: valid structured JSON must not gain dependencies from the fallback parser

@@ -1,0 +1,4 @@
+FAIL: whitespace sibling symlink escapes target
+FAIL: source path whitespace must remain exact
+FAIL: sensitive line leaks through another rule or unsafe prefix
+FAIL: regular-file target must fail with an actionable diagnostic

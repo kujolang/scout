@@ -1,0 +1,88 @@
+{
+  "repository": "kujolang/scout",
+  "branch": "main",
+  "starting_sha": "682490313f0e1424d731eaf7892455569e171cee",
+  "ending_implementation_sha": "902cb2c2691684d5365d0cea3ac6965816760f3e",
+  "baseline_scripts": 24,
+  "final_scripts": 25,
+  "commands": [
+    {
+      "command": "tests/scripts/run_all_scout_tests.sh",
+      "result": "Passed: 24 original scripts before changes; debug Kujo 1.3.1"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/../kujo/target/release/kujo\" tests/scripts/run_all_scout_tests.sh",
+      "result": "Passed: all 25 final scripts, including six-finding redaction, cycle, FIFO, malformed config, and failure tests"
+    },
+    {
+      "command": "tests/scripts/test_hardening.sh",
+      "result": "Passed after fixes; failure probes retained separately"
+    },
+    {
+      "command": "tests/scripts/test_feat009_security_redaction.sh",
+      "result": "Passed"
+    },
+    {
+      "command": "tests/scripts/test_test005_golden_snapshots.sh",
+      "result": "Passed; no golden changes"
+    },
+    {
+      "command": "tests/scripts/test_arc007_deterministic_order.sh",
+      "result": "Passed"
+    },
+    {
+      "command": "tests/scripts/check_version_consistency.sh",
+      "result": "Passed: 1.0.0"
+    },
+    {
+      "command": "python3 tests/scripts/benchmark_hardening.py ../kujo/target/release/kujo 682490313f0e1424d731eaf7892455569e171cee docs/audits/artifacts/benchmark.json",
+      "result": "Passed: three samples per case and old/new equivalence"
+    },
+    {
+      "command": "../kujo/target/release/kujo run scout.kujo -- tests/fixtures/arc001 -o tests/tmp/audit-smoke -d 2 --security-export sarif --security-export jsonl --kennel-index --kennel-metadata",
+      "result": "Passed: fixture smoke and optional outputs"
+    },
+    {
+      "command": "../kujo/target/release/kujo run scout.kujo -- . --quick -o tests/tmp/audit-self-scan",
+      "result": "Passed: repository self-scan"
+    },
+    {
+      "command": "bash .github/scripts/check-kujo-tool-artifacts.sh 682490313f0e1424d731eaf7892455569e171cee HEAD",
+      "result": "Passed: artifact/ignore guard"
+    },
+    {
+      "command": "git diff --check 682490313f0e1424d731eaf7892455569e171cee HEAD",
+      "result": "Passed"
+    },
+    {
+      "command": "python3 -m py_compile tests/scripts/check_hardening.py tests/scripts/benchmark_hardening.py tests/scripts/validate_json_schema.py",
+      "result": "Passed"
+    },
+    {
+      "command": "for script in tests/scripts/*.sh .github/scripts/*.sh; do bash -n \"$script\" || exit 1; done",
+      "result": "Passed"
+    },
+    {
+      "command": "git ls-remote --exit-code --tags https://github.com/kujolang/kujo.git refs/tags/v0.14.0",
+      "result": "Exit 2: confirmed pre-existing missing tag"
+    },
+    {
+      "command": "git ls-remote --tags https://github.com/kujolang/kujo.git 'refs/tags/v1.3.*'",
+      "result": "Passed: verified peeled v1.3.1 ref"
+    },
+    {
+      "command": "cargo build --release --locked --manifest-path .cache/audit-runtime/Cargo.toml",
+      "result": "Blocked: host process exhaustion; also retried with -j 2 and -j 1 without completing"
+    }
+  ],
+  "signalbox": {
+    "captures": [
+      "cap_dfdc21ae-4042-40b0-ac86-8c8926a426da",
+      "cap_9e63836b-c206-492b-ae00-f63999a1c946"
+    ],
+    "signals": [
+      "sig_a39339e5-8343-4937-bdd2-53fcca47c63e"
+    ],
+    "exact_and_concept_retrieval": "passed"
+  }
+}

@@ -1,0 +1,1 @@
+[tool-artifacts] OK: all source rules are present and no pushed commit contains a listed artifact

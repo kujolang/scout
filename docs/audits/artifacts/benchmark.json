@@ -1,5 +1,26 @@
 {
   "baseline_ref": "682490313f0e1424d731eaf7892455569e171cee",
+  "candidate_ref": "902cb2c2691684d5365d0cea3ac6965816760f3e",
+  "source_sha256": {
+    "before": {
+      "scout.kujo": "01edd32380c9cc15af9e9cf7663e4c55ec60ecc15fbf8d12544e05b48e1f39fd",
+      "config.json": "af0d7afbafd9d56bf3f60fc3cff4e684d3aacf0a29c472c96ae330082533ef64",
+      "lib/sorting.kujo": "faf2e5c426859a95c0cb0567006a53020df950e99c8257447d22fc5788b2f6cc",
+      "lib/path_filters.kujo": "d13204b040f3dc2e321367bdb5cc2d974d659e6f2d37ffcc112528ac87e1c8f0",
+      "lib/security_exports.kujo": "1616d9057f5c82775dc78a42d3302ced08dc8e4cae34cddc5c5582facd65e760",
+      "lib/text_scan.kujo": "b0af04255e3fd1e3f4eca227450ed6a61f9cd59736bbcbd380889d5a1479bc90",
+      "lib/scout_runtime.kujo": "ee81976c2aeb8487c2f9275175dd3fa8c205fa33fcdf630b192f06217ad1563d"
+    },
+    "after": {
+      "scout.kujo": "01edd32380c9cc15af9e9cf7663e4c55ec60ecc15fbf8d12544e05b48e1f39fd",
+      "config.json": "af0d7afbafd9d56bf3f60fc3cff4e684d3aacf0a29c472c96ae330082533ef64",
+      "lib/sorting.kujo": "e0a0fbfbc9befa6564870f84d580cde65d95804e18f8aebf809ea15ab9e68465",
+      "lib/path_filters.kujo": "d3ea2c968fd6d98b25d370b34bb00e1bf6624d8b62100f9bbf063846a91239a1",
+      "lib/security_exports.kujo": "5f4efe409ac422d2c5529d516570832cc42c40a9e9576ddb4c97545832f6209a",
+      "lib/text_scan.kujo": "b0af04255e3fd1e3f4eca227450ed6a61f9cd59736bbcbd380889d5a1479bc90",
+      "lib/scout_runtime.kujo": "bc31a4bc815c71990243b438478a17e93b6cd2c39de7241c8f1de3b2dd4aa33e"
+    }
+  },
   "runtime": "kujo 1.3.1",
   "runtime_binary_sha256": "74078102b8da4a994438b361f8fb024c68f78ab3818811d18f237949cc861859",
   "platform": "macOS-26.6.2-x86_64-i386-64bit",
@@ -8,176 +29,176 @@
     "before-sort512": {
       "samples": [
         {
-          "wall_seconds": 15.634786,
-          "stdout_bytes": 26547,
-          "cpu_seconds": 4.860452,
+          "wall_seconds": 7.518968,
+          "stdout_bytes": 26546,
+          "cpu_seconds": 4.69423,
           "stdout_lines": 1,
-          "sort_ms": 12047
+          "sort_ms": 5392
         },
         {
-          "wall_seconds": 13.035727,
+          "wall_seconds": 5.417538,
           "stdout_bytes": 26546,
-          "cpu_seconds": 4.783146,
+          "cpu_seconds": 4.62649,
           "stdout_lines": 1,
-          "sort_ms": 9502
+          "sort_ms": 4089
         },
         {
-          "wall_seconds": 12.512081,
+          "wall_seconds": 7.043057,
           "stdout_bytes": 26546,
-          "cpu_seconds": 4.878874,
+          "cpu_seconds": 4.81777,
           "stdout_lines": 1,
-          "sort_ms": 9489
+          "sort_ms": 5350
         }
       ],
-      "median_cpu_seconds": 4.860452,
-      "median_wall_seconds": 13.035727
+      "median_cpu_seconds": 4.69423,
+      "median_wall_seconds": 7.043057
     },
     "before-scan-full": {
       "samples": [
         {
-          "wall_seconds": 4.569834,
+          "wall_seconds": 2.049101,
           "stdout_bytes": 495,
-          "cpu_seconds": 1.777278,
+          "cpu_seconds": 1.670956,
           "stdout_lines": 9,
           "artifact_bytes": 15731,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 4.757927,
+          "wall_seconds": 1.964557,
           "stdout_bytes": 495,
-          "cpu_seconds": 1.820817,
+          "cpu_seconds": 1.652079,
           "stdout_lines": 9,
           "artifact_bytes": 15731,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 4.981327,
+          "wall_seconds": 2.31286,
           "stdout_bytes": 495,
-          "cpu_seconds": 1.789674,
+          "cpu_seconds": 1.663123,
           "stdout_lines": 9,
           "artifact_bytes": 15731,
           "llms_bytes": 287
         }
       ],
-      "median_cpu_seconds": 1.789674,
-      "median_wall_seconds": 4.757927
+      "median_cpu_seconds": 1.663123,
+      "median_wall_seconds": 2.049101
     },
     "before-scan-minimal": {
       "samples": [
         {
-          "wall_seconds": 5.424074,
+          "wall_seconds": 1.955593,
           "stdout_bytes": 504,
-          "cpu_seconds": 1.837458,
+          "cpu_seconds": 1.608568,
           "stdout_lines": 9,
           "artifact_bytes": 13080,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 3.139672,
+          "wall_seconds": 1.920756,
           "stdout_bytes": 504,
-          "cpu_seconds": 1.807168,
+          "cpu_seconds": 1.612263,
           "stdout_lines": 9,
           "artifact_bytes": 13080,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 2.624231,
+          "wall_seconds": 1.724463,
           "stdout_bytes": 504,
-          "cpu_seconds": 1.762427,
+          "cpu_seconds": 1.591673,
           "stdout_lines": 9,
           "artifact_bytes": 13080,
           "llms_bytes": 287
         }
       ],
-      "median_cpu_seconds": 1.807168,
-      "median_wall_seconds": 3.139672
+      "median_cpu_seconds": 1.608568,
+      "median_wall_seconds": 1.920756
     },
     "after-sort512": {
       "samples": [
         {
-          "wall_seconds": 3.305497,
+          "wall_seconds": 2.486452,
           "stdout_bytes": 26546,
-          "cpu_seconds": 2.428881,
+          "cpu_seconds": 2.21017,
           "stdout_lines": 1,
-          "sort_ms": 1677
+          "sort_ms": 1215
         },
         {
-          "wall_seconds": 3.38255,
+          "wall_seconds": 3.038434,
           "stdout_bytes": 26546,
-          "cpu_seconds": 2.40448,
+          "cpu_seconds": 2.297051,
           "stdout_lines": 1,
-          "sort_ms": 1584
+          "sort_ms": 1151
         },
         {
-          "wall_seconds": 4.117594,
+          "wall_seconds": 2.462644,
           "stdout_bytes": 26546,
-          "cpu_seconds": 2.393277,
+          "cpu_seconds": 2.241449,
           "stdout_lines": 1,
-          "sort_ms": 2286
+          "sort_ms": 1182
         }
       ],
-      "median_cpu_seconds": 2.40448,
-      "median_wall_seconds": 3.38255
+      "median_cpu_seconds": 2.241449,
+      "median_wall_seconds": 2.486452
     },
     "after-scan-full": {
       "samples": [
         {
-          "wall_seconds": 2.502711,
+          "wall_seconds": 1.83049,
           "stdout_bytes": 493,
-          "cpu_seconds": 1.645389,
+          "cpu_seconds": 1.541892,
           "stdout_lines": 9,
           "artifact_bytes": 15728,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 2.367804,
+          "wall_seconds": 1.607604,
           "stdout_bytes": 493,
-          "cpu_seconds": 1.645172,
+          "cpu_seconds": 1.515733,
           "stdout_lines": 9,
           "artifact_bytes": 15728,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 2.31942,
+          "wall_seconds": 1.798758,
           "stdout_bytes": 493,
-          "cpu_seconds": 1.704974,
+          "cpu_seconds": 1.543527,
           "stdout_lines": 9,
           "artifact_bytes": 15728,
           "llms_bytes": 287
         }
       ],
-      "median_cpu_seconds": 1.645389,
-      "median_wall_seconds": 2.367804
+      "median_cpu_seconds": 1.541892,
+      "median_wall_seconds": 1.798758
     },
     "after-scan-minimal": {
       "samples": [
         {
-          "wall_seconds": 1.919803,
+          "wall_seconds": 1.624041,
           "stdout_bytes": 502,
-          "cpu_seconds": 1.625927,
+          "cpu_seconds": 1.490882,
           "stdout_lines": 9,
           "artifact_bytes": 13077,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 2.669115,
+          "wall_seconds": 2.026296,
           "stdout_bytes": 502,
-          "cpu_seconds": 1.704995,
+          "cpu_seconds": 1.556973,
           "stdout_lines": 9,
           "artifact_bytes": 13077,
           "llms_bytes": 287
         },
         {
-          "wall_seconds": 2.080945,
+          "wall_seconds": 2.228182,
           "stdout_bytes": 502,
-          "cpu_seconds": 1.665633,
+          "cpu_seconds": 1.566394,
           "stdout_lines": 9,
           "artifact_bytes": 13077,
           "llms_bytes": 287
         }
       ],
-      "median_cpu_seconds": 1.665633,
-      "median_wall_seconds": 2.080945
+      "median_cpu_seconds": 1.556973,
+      "median_wall_seconds": 2.026296
     }
   },
   "equivalence": "exact sorting and context documents match; normalized intelligence matches across versions and repeated scans"

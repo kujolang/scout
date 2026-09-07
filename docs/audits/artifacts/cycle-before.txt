@@ -1,0 +1,2 @@
+FAIL: directory cycle reanalyzed the same source
+FAIL: directory cycle must be diagnosed
