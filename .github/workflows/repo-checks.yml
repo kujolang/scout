@@ -6,11 +6,15 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+
 jobs:
   repo-checks:
     runs-on: ubuntu-latest
     env:
-      SCOUT_CI_KUJO_REF: v0.14.0
+      # Kujo v1.3.1, pinned to the peeled release commit.
+      SCOUT_CI_KUJO_REF: dc4803598d0421b31ecfd3f1027732589f1e8df1
 
     steps:
       - name: Checkout
@@ -35,9 +39,13 @@ jobs:
           set -euo pipefail
 
           rm -rf /tmp/kujo-runtime "$GITHUB_WORKSPACE/.ci-bin"
-          git clone --depth 1 --branch "$SCOUT_CI_KUJO_REF" https://github.com/kujolang/kujo.git /tmp/kujo-runtime
+          git init /tmp/kujo-runtime
           cd /tmp/kujo-runtime
-          cargo build --release
+          git remote add origin https://github.com/kujolang/kujo.git
+          git fetch --depth 1 origin "$SCOUT_CI_KUJO_REF"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$SCOUT_CI_KUJO_REF"
+          cargo build --release --locked
           mkdir -p "$GITHUB_WORKSPACE/.ci-bin"
           install -m 0755 target/release/kujo "$GITHUB_WORKSPACE/.ci-bin/kujo"
 

@@ -6,7 +6,7 @@ It records current work; it does not reconstruct historical checklist entries.
 
 - [x] HARD-001: Exact path boundaries, cross-rule redaction, scan diagnostics, numeric validation, and JSON fallback correctness; add behavioral regression coverage.
 - [x] HARD-002: Stable merge sorting and removal of unnecessary report/finding retention; preserve output contracts and measure representative scans.
-- [ ] HARD-003: Repair and verify the pinned CI runtime, finalize the evidence-backed repository audit.
+- [x] HARD-003: Repair the pinned CI reference and publish the audit with explicit verification limitations.
 
 ## Work Log
 
@@ -32,3 +32,13 @@ It records current work; it does not reconstruct historical checklist entries.
   Timings are recorded evidence, never machine-dependent CI thresholds.
 - Validation: Python stable-sort oracle, non-mutation checks, existing snapshots,
   normalized before/after scan equality, and repeated benchmark samples (audit artifacts).
+
+### 2026-09-07 — HARD-003
+
+- Replaced nonexistent runtime tag `v0.14.0` with verified published release commit
+  `dc4803598d0421b31ecfd3f1027732589f1e8df1`; CI verifies the fetched SHA and uses
+  `cargo build --release --locked`, with read-only repository permissions.
+- Fresh local runtime compilation remains blocked by host process exhaustion, including
+  two-job and serial attempts. Available Kujo 1.3.1 binaries cover Scout verification;
+  the audit distinguishes this blocker from passing local functional checks.
+- Updated contributor guidance and the repository-local audit/measurement receipts.

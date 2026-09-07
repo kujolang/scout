@@ -91,7 +91,7 @@ If multiple Kujo binaries exist on the machine, pin the runtime for test runs:
 KUJO_BIN=kujo tests/scripts/run_all_scout_tests.sh
 ```
 
-CI uses a pinned Kujo runtime tag (`SCOUT_CI_KUJO_REF` in `.github/workflows/repo-checks.yml`) to prevent version/source drift.
+CI uses an immutable Kujo release commit (`SCOUT_CI_KUJO_REF` in `.github/workflows/repo-checks.yml`) to prevent version/source drift.
 
 ## Checklist and Docs Updates
 

@@ -385,5 +385,9 @@ to be reviewed and regenerated with `--write-baseline`. Old baselines remain rea
 Valid JSON manifests use structured parsing exclusively; malformed manifests retain
 best-effort line recovery.
 
+The scan manifest is written last, after the artifacts. Report publication and baseline
+replacement are not an atomic transaction; avoid concurrent writers to the same run
+or baseline and consume artifacts only after a successful scan receipt.
+
 The hardening audit and reproducible benchmark command are in
 [`docs/audits/repository-hardening.md`](docs/audits/repository-hardening.md).
