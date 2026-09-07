@@ -1,0 +1,12 @@
+{
+  "before": {
+    "sort_ms": 14420,
+    "count": 512,
+    "output_sha256": "e897932324d1de014119bc72f191e8a8c89d794ab9a4d3baccaa6471bd3706f6"
+  },
+  "after": {
+    "sort_ms": 2324,
+    "count": 512,
+    "output_sha256": "e897932324d1de014119bc72f191e8a8c89d794ab9a4d3baccaa6471bd3706f6"
+  }
+}

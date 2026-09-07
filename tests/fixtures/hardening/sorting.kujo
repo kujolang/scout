@@ -1,0 +1,10 @@
+from lib.sorting import sort_dependencies, sort_routes, sort_security_findings, sort_strings_asc
+items := []
+i := 512
+while i > 0 {
+    items := push(items, {"module": to_string(i), "type": "module", "source": "main.py"})
+    i := i - 1
+}
+start := current_timestamp()
+sorted := sort_dependencies(items)
+print(to_json({"elapsed_ms": current_timestamp() - start, "items": sorted}))
