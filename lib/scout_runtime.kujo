@@ -292,6 +292,9 @@ if file_exists(CONFIG_PATH) {
 
             if has_key(scan_doc, "default_max_depth") {
                 cfg_depth := trim(to_string(scan_doc["default_max_depth"]))
+                if !is_non_negative_integer_text(cfg_depth) {
+                    error_exit("scan.default_max_depth must be a non-negative integer")
+                }
                 if cfg_depth != "" {
                     MAX_DEPTH := to_int(cfg_depth)
                 }
@@ -299,6 +302,9 @@ if file_exists(CONFIG_PATH) {
 
             if has_key(scan_doc, "max_file_size") {
                 cfg_size := trim(to_string(scan_doc["max_file_size"]))
+                if !is_non_negative_integer_text(cfg_size) {
+                    error_exit("scan.max_file_size must be a non-negative integer")
+                }
                 if cfg_size != "" {
                     MAX_FILE_SIZE := to_int(cfg_size)
                 }
@@ -658,6 +664,9 @@ while I < len(ARGS) {
 if !file_exists(TARGET) {
     error_exit("target path not found: " + TARGET)
 }
+if !path_is_dir(TARGET) {
+    error_exit("target must be a directory: " + TARGET)
+}
 
 TARGET_ABS := path_absolute(TARGET)
 
@@ -747,12 +756,13 @@ for p2 in OUTPUT_PARTS {
     }
 }
 
+PARSE_ERRORS := []
 TREE_LINES := ["# Project File Tree", "", "- [D] " + TARGET_DISPLAY]
 CODE_FILES := []
 TOTAL_FILES_SEEN := 0
 TOTAL_DIRS_SEEN := 0
 
-LEVEL_DIRS := [{"path": TARGET, "depth": 0}]
+LEVEL_DIRS := [{"path": TARGET, "depth": 0, "ancestors": [TARGET_ABS]}]
 while len(LEVEL_DIRS) > 0 {
     NEXT_LEVEL := []
 
@@ -761,117 +771,137 @@ while len(LEVEL_DIRS) > 0 {
         dir_depth := dir_node["depth"]
 
         try {
-            items := list_dir(dir_path)
+            dir_out_path := format_output_path(dir_path, TARGET_ABS, PATH_MODE)
+            items := sort_strings_asc(list_dir(dir_path))
             for item in items {
-                if has_key(IGNORED_DIRS, item) == 0 && !(dir_depth == 0 && starts_with(item, ".")) && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) && !(dir_depth == 0 && item == OUTPUT_BASE) {
-                    full_path := dir_path + "/" + item
-                    if is_path_within_target(full_path, TARGET_ABS) {
-                        child_is_dir := path_is_dir(full_path)
-                        rel_path := relative_path_from_target(full_path, TARGET_ABS)
+                try {
+                    if has_key(IGNORED_DIRS, item) == 0 && !(dir_depth == 0 && starts_with(item, ".")) && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) && !(dir_depth == 0 && item == OUTPUT_BASE) {
+                        full_path := dir_path + "/" + item
+                        if is_path_within_target(full_path, TARGET_ABS) {
+                            child_is_dir := path_is_dir(full_path)
+                            rel_path := relative_path_from_target(full_path, TARGET_ABS)
 
-                        excluded := false
-                        if len(EXCLUDE_PATTERNS) > 0 {
-                            ex_i := 0
-                            while ex_i < len(EXCLUDE_PATTERNS) {
-                                if pattern_match(rel_path, to_string(EXCLUDE_PATTERNS[ex_i])) {
-                                    excluded := true
-                                    break
-                                }
-                                ex_i := ex_i + 1
-                            }
-                        }
-
-                        include_allowed := true
-                        if !child_is_dir && len(INCLUDE_PATTERNS) > 0 {
-                            include_allowed := false
-                            in_i := 0
-                            while in_i < len(INCLUDE_PATTERNS) {
-                                if pattern_match(rel_path, to_string(INCLUDE_PATTERNS[in_i])) {
-                                    include_allowed := true
-                                    break
-                                }
-                                in_i := in_i + 1
-                            }
-                        }
-
-                        if !excluded && include_allowed {
-                            indent := ""
-                            ind_i := 0
-                            while ind_i < dir_depth + 1 {
-                                indent := indent + "  "
-                                ind_i := ind_i + 1
-                            }
-
-                            if child_is_dir {
-                                TOTAL_DIRS_SEEN := TOTAL_DIRS_SEEN + 1
-                                TREE_LINES := push(TREE_LINES, indent + "- [D] " + item)
-                                if dir_depth < MAX_DEPTH {
-                                    NEXT_LEVEL := push(NEXT_LEVEL, {"path": full_path, "depth": dir_depth + 1})
+                            excluded := false
+                            if len(EXCLUDE_PATTERNS) > 0 {
+                                ex_i := 0
+                                while ex_i < len(EXCLUDE_PATTERNS) {
+                                    if pattern_match(rel_path, to_string(EXCLUDE_PATTERNS[ex_i])) {
+                                        excluded := true
+                                        break
+                                    }
+                                    ex_i := ex_i + 1
                                 }
                             }
 
-                            if !child_is_dir {
-                                TOTAL_FILES_SEEN := TOTAL_FILES_SEEN + 1
+                            include_allowed := true
+                            if !child_is_dir && len(INCLUDE_PATTERNS) > 0 {
+                                include_allowed := false
+                                in_i := 0
+                                while in_i < len(INCLUDE_PATTERNS) {
+                                    if pattern_match(rel_path, to_string(INCLUDE_PATTERNS[in_i])) {
+                                        include_allowed := true
+                                        break
+                                    }
+                                    in_i := in_i + 1
+                                }
+                            }
 
-                                file_size_bytes := 0
-                                try {
-                                    file_size_bytes := file_size(full_path)
-                                } except err {
+                            if !excluded && include_allowed {
+                                indent := ""
+                                ind_i := 0
+                                while ind_i < dir_depth + 1 {
+                                    indent := indent + "  "
+                                    ind_i := ind_i + 1
+                                }
+
+                                if child_is_dir {
+                                    TOTAL_DIRS_SEEN := TOTAL_DIRS_SEEN + 1
+                                    TREE_LINES := push(TREE_LINES, indent + "- [D] " + item)
+                                    child_abs := path_absolute(full_path)
+                                    directory_cycle := false
+                                    for ancestor in dir_node["ancestors"] {
+                                        if child_abs == ancestor {
+                                            directory_cycle := true
+                                        }
+                                    }
+                                    if directory_cycle {
+                                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": format_output_path(full_path, TARGET_ABS, PATH_MODE), "error": "directory_cycle"})
+                                    }
+                                    if !directory_cycle && dir_depth < MAX_DEPTH {
+                                        NEXT_LEVEL := push(NEXT_LEVEL, {"path": full_path, "depth": dir_depth + 1, "ancestors": push(dir_node["ancestors"], child_abs)})
+                                    }
+                                }
+
+                                if !child_is_dir && path_is_file(full_path) {
+                                    TOTAL_FILES_SEEN := TOTAL_FILES_SEEN + 1
+
                                     file_size_bytes := 0
-                                }
-
-                                lang := "Unknown"
-                                for ext in keys(LANGUAGE_MAP) {
-                                    if ends_with(item, ext) {
-                                        lang := LANGUAGE_MAP[ext]
-                                        break
+                                    try {
+                                        file_size_bytes := file_size(full_path)
+                                    } except err {
+                                        file_size_bytes := 0
+                                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": rel_path, "error": "stat_failed"})
                                     }
-                                }
 
-                                size_label := to_string(file_size_bytes) + " B"
-                                if file_size_bytes >= 1024 && file_size_bytes < 1048576 {
-                                    size_label := to_string(round((file_size_bytes / 1024) * 10) / 10) + " KB"
-                                }
-                                if file_size_bytes >= 1048576 {
-                                    size_label := to_string(round((file_size_bytes / 1048576) * 10) / 10) + " MB"
-                                }
-
-                                TREE_LINES := push(TREE_LINES, indent + "- [F] " + item + " (" + lang + ", " + size_label + ")")
-
-                                ignored_ext := false
-                                for ext2 in keys(IGNORED_EXTS) {
-                                    if ends_with(item, ext2) {
-                                        ignored_ext := true
-                                        break
+                                    lang := "Unknown"
+                                    for ext in keys(LANGUAGE_MAP) {
+                                        if ends_with(item, ext) {
+                                            lang := LANGUAGE_MAP[ext]
+                                            break
+                                        }
                                     }
-                                }
 
-                                include_as_code := false
-                                if !ignored_ext && lang != "Unknown" && lang != "Lock File" {
-                                    include_as_code := true
-                                }
-                                if !ignored_ext && has_key(MANIFEST_FILES, item) {
-                                    include_as_code := true
-                                }
-                                if !ignored_ext && starts_with(item, "requirements-") && ends_with(item, ".txt") {
-                                    include_as_code := true
-                                }
+                                    size_label := to_string(file_size_bytes) + " B"
+                                    if file_size_bytes >= 1024 && file_size_bytes < 1048576 {
+                                        size_label := to_string(round((file_size_bytes / 1024) * 10) / 10) + " KB"
+                                    }
+                                    if file_size_bytes >= 1048576 {
+                                        size_label := to_string(round((file_size_bytes / 1048576) * 10) / 10) + " MB"
+                                    }
 
-                                if include_as_code {
-                                    CODE_FILES := push(CODE_FILES, {
-                                        "path": full_path,
-                                        "name": item,
-                                        "lang": lang,
-                                        "size": file_size_bytes
-                                    })
+                                    TREE_LINES := push(TREE_LINES, indent + "- [F] " + item + " (" + lang + ", " + size_label + ")")
+
+                                    ignored_ext := false
+                                    for ext2 in keys(IGNORED_EXTS) {
+                                        if ends_with(item, ext2) {
+                                            ignored_ext := true
+                                            break
+                                        }
+                                    }
+
+                                    include_as_code := false
+                                    if !ignored_ext && lang != "Unknown" && lang != "Lock File" {
+                                        include_as_code := true
+                                    }
+                                    if !ignored_ext && has_key(MANIFEST_FILES, item) {
+                                        include_as_code := true
+                                    }
+                                    if !ignored_ext && starts_with(item, "requirements-") && ends_with(item, ".txt") {
+                                        include_as_code := true
+                                    }
+
+                                    if include_as_code {
+                                        CODE_FILES := push(CODE_FILES, {
+                                            "path": full_path,
+                                            "name": item,
+                                            "lang": lang,
+                                            "size": file_size_bytes
+                                        })
+                                    }
                                 }
                             }
                         }
                     }
+                } except err {
+                    entry_error_path := dir_out_path + "/" + item
+                    if dir_out_path == "." {
+                        entry_error_path := item
+                    }
+                    PARSE_ERRORS := push(PARSE_ERRORS, {"file": entry_error_path, "error": "path_unavailable"})
                 }
             }
         } except err {
-            # Skip unreadable directories
+            PARSE_ERRORS := push(PARSE_ERRORS, {"file": format_output_path(dir_path, TARGET_ABS, PATH_MODE), "error": "directory_read_failed"})
         }
     }
 
@@ -896,8 +926,8 @@ ROUTES := []
 ROUTE_SEEN := {}
 SECURITY_FINDINGS := []
 ALL_SECURITY_FINDINGS := []
+SECURITY_FINDINGS_TOTAL := 0
 SUPPRESSED_SECURITY_FINDINGS := []
-PARSE_ERRORS := []
 
 for code_file in CODE_FILES {
     path := code_file["path"]
@@ -923,8 +953,11 @@ for code_file in CODE_FILES {
     truncated := false
 
     try {
-        content := read_file(path)
-        read_ok := true
+        # Recheck after discovery; this reduces, but cannot eliminate, rename races.
+        if is_path_within_target(path, TARGET_ABS) {
+            content := read_file(path)
+            read_ok := true
+        }
     } except err {
         read_ok := false
     }
@@ -950,6 +983,7 @@ for code_file in CODE_FILES {
 
         if !SKIP_DEPS {
             if name == "package.json" {
+                pkg_parsed := false
                 try {
                     pkg_doc := parse_json(content)
                     for pkg_section_name in ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] {
@@ -963,57 +997,61 @@ for code_file in CODE_FILES {
                             }
                         }
                     }
+                    pkg_parsed := true
                 } except err {
                     # The line parser below preserves best-effort behavior for malformed manifests.
                 }
 
-                pkg_section := ""
-                for pkg_line in lines {
-                    pkg_trim := trim(pkg_line)
+                if !pkg_parsed {
+                    pkg_section := ""
+                    for pkg_line in lines {
+                        pkg_trim := trim(pkg_line)
 
-                    if pkg_section == "" {
-                        if starts_with(pkg_trim, "\"dependencies\"") && index_of(pkg_trim, "{") >= 0 {
-                            pkg_section := "dependencies"
+                        if pkg_section == "" {
+                            if starts_with(pkg_trim, "\"dependencies\"") && index_of(pkg_trim, "{") >= 0 {
+                                pkg_section := "dependencies"
+                            }
+                            if starts_with(pkg_trim, "\"devDependencies\"") && index_of(pkg_trim, "{") >= 0 {
+                                pkg_section := "devDependencies"
+                            }
+                            if starts_with(pkg_trim, "\"peerDependencies\"") && index_of(pkg_trim, "{") >= 0 {
+                                pkg_section := "peerDependencies"
+                            }
+                            if starts_with(pkg_trim, "\"optionalDependencies\"") && index_of(pkg_trim, "{") >= 0 {
+                                pkg_section := "optionalDependencies"
+                            }
                         }
-                        if starts_with(pkg_trim, "\"devDependencies\"") && index_of(pkg_trim, "{") >= 0 {
-                            pkg_section := "devDependencies"
-                        }
-                        if starts_with(pkg_trim, "\"peerDependencies\"") && index_of(pkg_trim, "{") >= 0 {
-                            pkg_section := "peerDependencies"
-                        }
-                        if starts_with(pkg_trim, "\"optionalDependencies\"") && index_of(pkg_trim, "{") >= 0 {
-                            pkg_section := "optionalDependencies"
-                        }
-                    }
 
-                    if pkg_section != "" {
-                        if starts_with(pkg_trim, "\"") {
-                            p1 := index_of(pkg_trim, "\"")
-                            if p1 >= 0 {
-                                p2 := find_after(pkg_trim, "\"", p1 + 1)
-                                if p2 > p1 {
-                                    pkg_dep := trim(substring(pkg_trim, p1 + 1, p2))
-                                    if pkg_dep != "" {
-                                        if pkg_dep != "dependencies" && pkg_dep != "devDependencies" && pkg_dep != "peerDependencies" && pkg_dep != "optionalDependencies" {
-                                            pkg_key := "npm_" + pkg_section + "|" + pkg_dep
-                                            if has_key(DEP_SEEN, pkg_key) == 0 {
-                                                DEP_SEEN[pkg_key] := true
-                                                DEPENDENCIES := push(DEPENDENCIES, {"type": "npm_" + pkg_section, "module": pkg_dep, "source": out_path})
+                        if pkg_section != "" {
+                            if starts_with(pkg_trim, "\"") {
+                                p1 := index_of(pkg_trim, "\"")
+                                if p1 >= 0 {
+                                    p2 := find_after(pkg_trim, "\"", p1 + 1)
+                                    if p2 > p1 {
+                                        pkg_dep := trim(substring(pkg_trim, p1 + 1, p2))
+                                        if pkg_dep != "" {
+                                            if pkg_dep != "dependencies" && pkg_dep != "devDependencies" && pkg_dep != "peerDependencies" && pkg_dep != "optionalDependencies" {
+                                                pkg_key := "npm_" + pkg_section + "|" + pkg_dep
+                                                if has_key(DEP_SEEN, pkg_key) == 0 {
+                                                    DEP_SEEN[pkg_key] := true
+                                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "npm_" + pkg_section, "module": pkg_dep, "source": out_path})
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if index_of(pkg_trim, "}") >= 0 {
-                            pkg_section := ""
+                            if index_of(pkg_trim, "}") >= 0 {
+                                pkg_section := ""
+                            }
                         }
                     }
                 }
             }
 
             if name == "composer.json" {
+                composer_parsed := false
                 try {
                     composer_doc := parse_json(content)
                     for composer_section_name in ["require", "require-dev"] {
@@ -1029,45 +1067,48 @@ for code_file in CODE_FILES {
                             }
                         }
                     }
+                    composer_parsed := true
                 } except err {
                     # The line parser below preserves best-effort behavior for malformed manifests.
                 }
 
-                composer_section := ""
-                for composer_line in lines {
-                    composer_trim := trim(composer_line)
+                if !composer_parsed {
+                    composer_section := ""
+                    for composer_line in lines {
+                        composer_trim := trim(composer_line)
 
-                    if composer_section == "" {
-                        if starts_with(composer_trim, "\"require\"") && index_of(composer_trim, "{") >= 0 {
-                            composer_section := "require"
+                        if composer_section == "" {
+                            if starts_with(composer_trim, "\"require\"") && index_of(composer_trim, "{") >= 0 {
+                                composer_section := "require"
+                            }
+                            if starts_with(composer_trim, "\"require-dev\"") && index_of(composer_trim, "{") >= 0 {
+                                composer_section := "require-dev"
+                            }
                         }
-                        if starts_with(composer_trim, "\"require-dev\"") && index_of(composer_trim, "{") >= 0 {
-                            composer_section := "require-dev"
-                        }
-                    }
 
-                    if composer_section != "" {
-                        if starts_with(composer_trim, "\"") {
-                            c1 := index_of(composer_trim, "\"")
-                            if c1 >= 0 {
-                                c2 := find_after(composer_trim, "\"", c1 + 1)
-                                if c2 > c1 {
-                                    composer_dep := trim(substring(composer_trim, c1 + 1, c2))
-                                    if composer_dep != "" && composer_dep != "php" && !starts_with(composer_dep, "ext-") && !starts_with(composer_dep, "lib-") {
-                                        if composer_dep != "require" && composer_dep != "require-dev" {
-                                            composer_key := "composer_" + composer_section + "|" + composer_dep
-                                            if has_key(DEP_SEEN, composer_key) == 0 {
-                                                DEP_SEEN[composer_key] := true
-                                                DEPENDENCIES := push(DEPENDENCIES, {"type": "composer_" + composer_section, "module": composer_dep, "source": out_path})
+                        if composer_section != "" {
+                            if starts_with(composer_trim, "\"") {
+                                c1 := index_of(composer_trim, "\"")
+                                if c1 >= 0 {
+                                    c2 := find_after(composer_trim, "\"", c1 + 1)
+                                    if c2 > c1 {
+                                        composer_dep := trim(substring(composer_trim, c1 + 1, c2))
+                                        if composer_dep != "" && composer_dep != "php" && !starts_with(composer_dep, "ext-") && !starts_with(composer_dep, "lib-") {
+                                            if composer_dep != "require" && composer_dep != "require-dev" {
+                                                composer_key := "composer_" + composer_section + "|" + composer_dep
+                                                if has_key(DEP_SEEN, composer_key) == 0 {
+                                                    DEP_SEEN[composer_key] := true
+                                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "composer_" + composer_section, "module": composer_dep, "source": out_path})
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if index_of(composer_trim, "}") >= 0 {
-                            composer_section := ""
+                            if index_of(composer_trim, "}") >= 0 {
+                                composer_section := ""
+                            }
                         }
                     }
                 }
@@ -2238,6 +2279,8 @@ for code_file in CODE_FILES {
 
                 if !SKIP_SEC && security_scan_allowed && !inside_security_patterns_definition {
                     trimmed_lower := lower(trimmed)
+                    matched_patterns := []
+                    safe_line_snippet := trimmed
                     for s_pattern in SECURITY_PATTERNS {
                         matched := false
                         for s_keyword in s_pattern["match"] {
@@ -2255,28 +2298,39 @@ for code_file in CODE_FILES {
                             }
                         }
                         if matched {
-                            finding_snippet := redact_security_snippet(trimmed, s_pattern["label"])
-                            finding_entry := {
-                                "file": out_path,
-                                "line": line_num,
-                                "label": s_pattern["label"],
-                                "severity": s_pattern["severity"],
-                                "snippet": finding_snippet
+                            matched_patterns := push(matched_patterns, s_pattern)
+                            sensitive_label := s_pattern["label"]
+                            if sensitive_label == "Hardcoded credential" || sensitive_label == "Hardcoded token" || sensitive_label == "Embedded private key" {
+                                safe_line_snippet := redact_security_snippet(trimmed, sensitive_label)
                             }
-                            finding_entry["fingerprint"] := build_security_fingerprint(out_path, line_num, s_pattern["label"], s_pattern["severity"], finding_snippet)
+                        }
+                    }
+                    # Never expose a sensitive line through a second, non-secret rule.
+                    for s_pattern in matched_patterns {
+                        finding_snippet := safe_line_snippet
+                        finding_entry := {
+                            "file": out_path,
+                            "line": line_num,
+                            "label": s_pattern["label"],
+                            "severity": s_pattern["severity"],
+                            "snippet": finding_snippet
+                        }
+                        finding_entry["fingerprint"] := build_security_fingerprint(out_path, line_num, s_pattern["label"], s_pattern["severity"], finding_snippet)
 
+                        SECURITY_FINDINGS_TOTAL := SECURITY_FINDINGS_TOTAL + 1
+                        if WRITE_BASELINE {
                             ALL_SECURITY_FINDINGS := push(ALL_SECURITY_FINDINGS, finding_entry)
+                        }
 
-                            suppressed := has_key(BASELINE_FINGERPRINTS, finding_entry["fingerprint"]) == 1
-                            finding_entry["suppressed"] := suppressed
+                        suppressed := has_key(BASELINE_FINGERPRINTS, finding_entry["fingerprint"]) == 1
+                        finding_entry["suppressed"] := suppressed
 
-                            if suppressed {
-                                SUPPRESSED_SECURITY_FINDINGS := push(SUPPRESSED_SECURITY_FINDINGS, finding_entry)
-                            }
+                        if suppressed {
+                            SUPPRESSED_SECURITY_FINDINGS := push(SUPPRESSED_SECURITY_FINDINGS, finding_entry)
+                        }
 
-                            if !suppressed || SHOW_SUPPRESSED {
-                                SECURITY_FINDINGS := push(SECURITY_FINDINGS, finding_entry)
-                            }
+                        if !suppressed || SHOW_SUPPRESSED {
+                            SECURITY_FINDINGS := push(SECURITY_FINDINGS, finding_entry)
                         }
                     }
                 }
@@ -2356,7 +2410,10 @@ ROUTES := sort_routes(ROUTES)
 SECURITY_FINDINGS := sort_security_findings(SECURITY_FINDINGS)
 LANGUAGE_KEYS_SORTED := sort_strings_asc(keys(METRICS["languages"]))
 
-FILE_TREE_MD := join(TREE_LINES, "\n") + "\n"
+FILE_TREE_MD := ""
+if OUTPUT_PROFILE == "full" {
+    FILE_TREE_MD := join(TREE_LINES, "\n") + "\n"
+}
 
 REPORT_LINES := []
 REPORT_LINES := append_lines(REPORT_LINES, [
@@ -2474,72 +2531,76 @@ for lang_name2 in LANGUAGE_KEYS_SORTED {
 }
 LLMS_TXT := join(LLMS_LINES, "\n") + "\n"
 
-AGENT_LINES := []
-AGENT_LINES := append_lines(AGENT_LINES, [
-    "# " + PROJECT_NAME,
-    "",
-    "## AI Agent Context",
-    "",
-    "- Analyze files before modifications.",
-    "- Follow existing patterns and naming.",
-    "- Prioritize secure defaults.",
-    "",
-    "## Detected Routes",
-    ""
-])
-if len(ROUTES) == 0 {
-    AGENT_LINES := push(AGENT_LINES, "None")
-}
-if len(ROUTES) > 0 {
-    for r in ROUTES {
-        AGENT_LINES := push(AGENT_LINES, "- `" + r["method"] + " " + r["path"] + "` (" + r["source"] + ")")
+AGENTS_MD := ""
+CHECKLIST_MD := ""
+if OUTPUT_PROFILE == "full" {
+    AGENT_LINES := []
+    AGENT_LINES := append_lines(AGENT_LINES, [
+        "# " + PROJECT_NAME,
+        "",
+        "## AI Agent Context",
+        "",
+        "- Analyze files before modifications.",
+        "- Follow existing patterns and naming.",
+        "- Prioritize secure defaults.",
+        "",
+        "## Detected Routes",
+        ""
+    ])
+    if len(ROUTES) == 0 {
+        AGENT_LINES := push(AGENT_LINES, "None")
     }
-}
+    if len(ROUTES) > 0 {
+        for r in ROUTES {
+            AGENT_LINES := push(AGENT_LINES, "- `" + r["method"] + " " + r["path"] + "` (" + r["source"] + ")")
+        }
+    }
 
-HIGH_CRIT := 0
-for s in SECURITY_FINDINGS {
-    if s["severity"] == "high" || s["severity"] == "critical" {
-        HIGH_CRIT := HIGH_CRIT + 1
+    HIGH_CRIT := 0
+    for s in SECURITY_FINDINGS {
+        if s["severity"] == "high" || s["severity"] == "critical" {
+            HIGH_CRIT := HIGH_CRIT + 1
+        }
     }
-}
-AGENT_LINES := append_lines(AGENT_LINES, [
-    "",
-    "## Security Notes",
-    "",
-    md_kv("High/Critical findings", HIGH_CRIT),
-    md_kv("Total findings", len(SECURITY_FINDINGS)),
-    md_kv("Suppressed findings", len(SUPPRESSED_SECURITY_FINDINGS))
-])
-AGENTS_MD := join(AGENT_LINES, "\n") + "\n"
+    AGENT_LINES := append_lines(AGENT_LINES, [
+        "",
+        "## Security Notes",
+        "",
+        md_kv("High/Critical findings", HIGH_CRIT),
+        md_kv("Total findings", len(SECURITY_FINDINGS)),
+        md_kv("Suppressed findings", len(SUPPRESSED_SECURITY_FINDINGS))
+    ])
+    AGENTS_MD := join(AGENT_LINES, "\n") + "\n"
 
-CHECK_LINES := []
-CHECK_LINES := append_lines(CHECK_LINES, [
-    "# Code Review Checklist",
-    "",
-    "Scope: " + to_string(METRICS["total_files"]) + " files, " + to_string(METRICS["total_lines"]) + " lines",
-    "",
-    "## Architecture",
-    md_check("Structure follows conventions"),
-    md_check("Separation of concerns"),
-    md_check("Configuration is externalized"),
-    "",
-    "## Code Quality",
-    md_check("Functions are single-purpose"),
-    md_check("Error handling is complete"),
-    md_check("No dead code remains"),
-    "",
-    "## Security",
-    md_check("No hardcoded secrets"),
-    md_check("Inputs are validated"),
-    md_check("Authentication and authorization are enforced")
-])
-if len(SECURITY_FINDINGS) > 0 {
-    CHECK_LINES := append_lines(CHECK_LINES, ["", "Detected findings:"])
-    for f in SECURITY_FINDINGS {
-        CHECK_LINES := push(CHECK_LINES, md_check(f["severity"] + " - " + f["label"] + " at " + f["file"] + ":" + to_string(f["line"])))
+    CHECK_LINES := []
+    CHECK_LINES := append_lines(CHECK_LINES, [
+        "# Code Review Checklist",
+        "",
+        "Scope: " + to_string(METRICS["total_files"]) + " files, " + to_string(METRICS["total_lines"]) + " lines",
+        "",
+        "## Architecture",
+        md_check("Structure follows conventions"),
+        md_check("Separation of concerns"),
+        md_check("Configuration is externalized"),
+        "",
+        "## Code Quality",
+        md_check("Functions are single-purpose"),
+        md_check("Error handling is complete"),
+        md_check("No dead code remains"),
+        "",
+        "## Security",
+        md_check("No hardcoded secrets"),
+        md_check("Inputs are validated"),
+        md_check("Authentication and authorization are enforced")
+    ])
+    if len(SECURITY_FINDINGS) > 0 {
+        CHECK_LINES := append_lines(CHECK_LINES, ["", "Detected findings:"])
+        for f in SECURITY_FINDINGS {
+            CHECK_LINES := push(CHECK_LINES, md_check(f["severity"] + " - " + f["label"] + " at " + f["file"] + ":" + to_string(f["line"])))
+        }
     }
+    CHECKLIST_MD := join(CHECK_LINES, "\n") + "\n"
 }
-CHECKLIST_MD := join(CHECK_LINES, "\n") + "\n"
 
 INTELLIGENCE := {
     "tool": {"name": "scout", "version": VERSION},
@@ -2552,7 +2613,7 @@ INTELLIGENCE := {
     "dependencies": DEPENDENCIES,
     "routes": ROUTES,
     "security_findings": SECURITY_FINDINGS,
-    "security_findings_total": len(ALL_SECURITY_FINDINGS),
+    "security_findings_total": SECURITY_FINDINGS_TOTAL,
     "suppressed_security_findings": SUPPRESSED_SECURITY_FINDINGS,
     "parse_errors": PARSE_ERRORS,
     "flags": {
@@ -2575,13 +2636,13 @@ INTELLIGENCE := {
 try {
     create_dir(OUTPUT_ROOT)
 } except err {
-    # Directory may already exist
+    error_exit("unable to create output root: " + OUTPUT_ROOT)
 }
 
 try {
     create_dir(OUTPUT)
 } except err {
-    # Directory may already exist
+    error_exit("unable to create output directory: " + OUTPUT)
 }
 
 if OUTPUT_PROFILE == "full" {
@@ -2748,6 +2809,9 @@ CLI_LINES := [
     kv_line("Security findings", len(SECURITY_FINDINGS)),
     kv_line("Output profile", OUTPUT_PROFILE)
 ]
+if len(PARSE_ERRORS) > 0 {
+    CLI_LINES := push(CLI_LINES, kv_line("Scan diagnostics (intelligence.json)", len(PARSE_ERRORS)))
+}
 if !SKIP_SEC && !SHOW_SUPPRESSED && len(SUPPRESSED_SECURITY_FINDINGS) > 0 {
     CLI_LINES := push(CLI_LINES, kv_line("Suppressed findings", len(SUPPRESSED_SECURITY_FINDINGS)))
 }

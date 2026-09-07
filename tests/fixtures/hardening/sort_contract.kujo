@@ -1,0 +1,9 @@
+from lib.sorting import sort_dependencies, sort_routes, sort_security_findings, sort_strings_asc
+input := parse_json(read_file(args()[0]))
+print(to_json({
+    "strings": sort_strings_asc(input["strings"]),
+    "dependencies": sort_dependencies(input["dependencies"]),
+    "routes": sort_routes(input["routes"]),
+    "security": sort_security_findings(input["security"]),
+    "original": input
+}))

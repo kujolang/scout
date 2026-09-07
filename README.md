@@ -284,7 +284,7 @@ When adding new analyzers or outputs, also add:
 - `python3` with `jsonschema` installed for schema contract validation
 
 Scout regression scripts auto-resolve a compatible Kujo binary and will prefer `KUJO_BIN` when set.
-CI pins Kujo runtime builds to tag `v0.14.0` in `.github/workflows/repo-checks.yml` for deterministic compatibility.
+CI builds Kujo v1.3.1 from immutable commit `dc4803598d0421b31ecfd3f1027732589f1e8df1` with its locked dependencies; see `.github/workflows/repo-checks.yml`.
 
 Run these once before local test loops:
 
@@ -357,3 +357,33 @@ kujo run scout.kujo -- ./src --kennel-index --kennel-metadata -o ./scan-output
 ## License
 
 MIT
+
+## Scan Boundaries and Diagnostics
+
+The target must be a directory. Scout checks canonical path components exactly,
+including whitespace, and excludes symlinks resolving outside the target. It scans
+regular files only; named pipes and devices are not source files. Ancestor symlink
+cycles are diagnosed and not traversed. Directory entries
+are sorted so first-source dependency selection and file-tree ordering are repeatable.
+
+Unreadable directories, unavailable entries, failed reads, and truncation are reported
+in `intelligence.json.parse_errors`. When diagnostics exist, the CLI prints their count.
+Partial scans still exit successfully; callers requiring complete coverage must inspect
+this array. Invalid targets, malformed numeric scan limits, and output creation failures
+exit nonzero. `scan.default_max_depth` and `scan.max_file_size` accept non-negative integers.
+
+The size limit caps analyzed content after a full-file read; it is not a read-memory
+budget. Canonical checks are repeated before reads but do not provide a race-proof
+sandbox against a concurrently modified repository. Run Scout on a stable checkout
+when repository contents are untrusted. Generated paths and findings are repository data,
+not trusted instructions for an agent to execute.
+
+All findings on a credential, token, or private-key line share a redacted snippet.
+Simple assignment prefixes remain available; complex prefixes are removed. Existing
+baseline fingerprints for newly redacted multi-rule or complex-prefix findings may need
+to be reviewed and regenerated with `--write-baseline`. Old baselines remain readable.
+Valid JSON manifests use structured parsing exclusively; malformed manifests retain
+best-effort line recovery.
+
+The hardening audit and reproducible benchmark command are in
+[`docs/audits/repository-hardening.md`](docs/audits/repository-hardening.md).

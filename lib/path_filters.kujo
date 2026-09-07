@@ -63,7 +63,11 @@ func normalize_filter_text(value) {
 }
 
 func pattern_match(text, pattern) {
-    target_text := normalize_filter_text(text)
+    # A path is filesystem data: whitespace is significant, unlike rule padding.
+    target_text := text
+    if starts_with(target_text, "./") {
+        target_text := substring(target_text, 2, len(target_text))
+    }
     rule := normalize_filter_text(pattern)
 
     if rule == "" {
@@ -124,7 +128,7 @@ func path_components(path_text) {
 
     part_i := 0
     while part_i < len(raw_parts) {
-        part := trim(to_string(raw_parts[part_i]))
+        part := to_string(raw_parts[part_i])
         if part != "" {
             components := push(components, part)
         }
@@ -202,11 +206,7 @@ func format_output_path(path_text, target_abs, path_mode) {
     }
 
     relative := relative_path_from_target(path_text, target_abs)
-    normalized := normalize_filter_text(relative)
-    if normalized == "" {
-        return relative
-    }
-    return normalized
+    return relative
 }
 
 export basename_from_path := basename_from_path

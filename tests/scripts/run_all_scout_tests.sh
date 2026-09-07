@@ -36,6 +36,7 @@ tests=(
 	tests/scripts/test_test005_golden_snapshots.sh
 	tests/scripts/test_test006_security_rule_coverage.sh
 	tests/scripts/test_bugfix001_regression_matrix.sh
+	tests/scripts/test_hardening.sh
 )
 
 if [[ "${SCOUT_SKIP_SLOW:-0}" == "1" ]]; then

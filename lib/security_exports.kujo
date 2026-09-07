@@ -149,7 +149,14 @@ func redact_security_snippet(snippet, label) {
 
         if sep_pos >= 0 {
             prefix := trim(substring(snippet_text, 0, sep_pos))
-            if prefix != "" {
+            # Only retain a simple assignment name, never arbitrary source before '='.
+            safe_prefix := prefix != ""
+            for prefix_char in split(prefix, "") {
+                if index_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$ ", prefix_char) < 0 {
+                    safe_prefix := false
+                }
+            }
+            if safe_prefix {
                 return prefix + sep_char + " <redacted>"
             }
         }
