@@ -145,6 +145,7 @@ Generates standard output files plus optional security exports:
 | `--path-mode MODE` | Path style for outputs (`relative`\|`absolute`) | `relative` |
 | `--output-profile P` | Output profile: `full` or `minimal` | `full` |
 | `--quick` | Shortcut for `--output-profile minimal` | disabled |
+| `--strict` | Exit 2 if any scan diagnostic is emitted; preserve reports for inspection | disabled |
 | `-h, --help` | Show help | — |
 | `-v, --version` | Show version | — |
 
@@ -173,7 +174,7 @@ Key config sections:
 
 - `scan`: default depth, max file size, ignored directories, include/exclude defaults
 - `output`: default output directory, path mode, optional Kennel output toggles, optional security export defaults
-- `analysis`: enable/disable dependency/route/security analyzers, metrics collection, and baseline visibility defaults
+- `analysis`: enable/disable dependency/route/security analyzers, metrics collection, baseline visibility, and `strict_scan` (default `false`)
 
 Common examples:
 
@@ -374,7 +375,10 @@ are sorted so first-source dependency selection and file-tree ordering are repea
 Unreadable directories, unavailable entries, failed reads, and truncation are reported
 in `intelligence.json.parse_errors`. When diagnostics exist, the CLI prints their count.
 Partial scans still exit successfully; callers requiring complete coverage must inspect
-this array. Invalid targets, malformed numeric scan limits, and output creation failures
+this array or opt into `--strict`. In strict mode, a partial scan publishes its
+report and exits 2 after displaying the diagnostic count; `--write-baseline` leaves
+the previous baseline untouched. A complete strict scan exits 0. Invalid targets,
+malformed numeric scan limits, and output creation failures
 exit nonzero. `scan.default_max_depth` and `scan.max_file_size` accept non-negative integers.
 
 The size limit caps the analyzed character prefix and its read budget is at most four

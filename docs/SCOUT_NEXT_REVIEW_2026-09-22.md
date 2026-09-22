@@ -39,10 +39,11 @@ loop; include a fixture, focused regression, README update, and verification evi
   atomically replace an accepted baseline only after the report is published.
   `tests/scripts/test_recoverable_publication.sh` injects report and baseline
   write failures and checks concurrent run isolation.
-- [ ] REL-002: Define explicit failure policy for partial scans. `parse_errors` can
-  contain read failures or truncation while the process still exits successfully.
-  Add an opt-in strict CI flag, document its exit status, and cover complete,
-  truncated, and unreadable targets without changing the default behavior.
+- [x] REL-002: Define explicit failure policy for partial scans. Opt-in
+  `--strict` or `analysis.strict_scan` returns exit 2 on any diagnostic while
+  publishing the report and retaining the prior baseline. Default behavior
+  remains successful; `tests/scripts/test_strict_partial_scans.sh` covers
+  complete, truncated, unavailable, and config cases.
 - [ ] FEAT-001: Expand discovery through opt-in language/plugin rules only after
   measurement. Route and dependency matching in `lib/scout_runtime.kujo` is
   framework-specific and largely line-based; collect representative user projects,
@@ -85,3 +86,11 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   file, normal replacement, and two concurrent report writers using local
   Kujo 1.4.0 and 1.3.1. The baseline and the directory are individually atomic,
   not one cross-file transaction; README states the residual limitation.
+
+### 2026-09-22 — REL-002
+
+- Added opt-in strict partial-scan failure (`--strict` / `analysis.strict_scan`)
+  in `lib/scout_runtime.kujo`, with default outputs unchanged and no baseline
+  replacement on strict failure. Updated `config.json` and README.
+- Tested both local Kujo 1.4.0 and 1.3.1 with complete, truncated, unavailable,
+  default-mode, and config-enabled scans; see the focused test script.

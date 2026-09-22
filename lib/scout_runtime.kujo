@@ -30,6 +30,7 @@ EMIT_KENNEL_INDEX := false
 EMIT_KENNEL_METADATA := false
 METRICS_ENABLED := true
 OUTPUT_PROFILE := "full"
+STRICT_SCAN := false
 
 LANGUAGE_MAP := {
     ".py": "Python",
@@ -388,6 +389,10 @@ if file_exists(CONFIG_PATH) {
         if has_key(config_doc, "analysis") && type(config_doc["analysis"]) == "dict" {
             analysis_doc := config_doc["analysis"]
 
+            if has_key(analysis_doc, "strict_scan") && type(analysis_doc["strict_scan"]) == "bool" {
+                STRICT_SCAN := analysis_doc["strict_scan"]
+            }
+
             if has_key(analysis_doc, "metrics") && type(analysis_doc["metrics"]) == "bool" {
                 METRICS_ENABLED := analysis_doc["metrics"]
             }
@@ -456,6 +461,7 @@ while I < len(ARGS) {
             "  --path-mode MODE     Path style for outputs: relative|absolute (default: relative)",
             "  --output-profile P   Output profile: full|minimal (default: full)",
             "  --quick              Shortcut for --output-profile minimal",
+            "  --strict             Exit 2 on partial scans (diagnostics remain in output)",
             "  --security-export F  Security export format: sarif|jsonl (repeatable)",
             "  --baseline PATH      Baseline file for suppressed security findings (default: scout-baseline.json)",
             "  --show-suppressed    Include suppressed findings in output",
@@ -595,6 +601,11 @@ while I < len(ARGS) {
     if a == "--quick" {
         handled_option := true
         OUTPUT_PROFILE := "minimal"
+    }
+
+    if a == "--strict" {
+        handled_option := true
+        STRICT_SCAN := true
     }
 
     if a == "--security-export" {
@@ -2660,6 +2671,11 @@ INTELLIGENCE := {
         "emit_kennel_metadata": EMIT_KENNEL_METADATA
     }
 }
+if STRICT_SCAN {
+    strict_flags := INTELLIGENCE["flags"]
+    strict_flags["strict_scan"] := true
+    INTELLIGENCE["flags"] := strict_flags
+}
 
 try {
     create_dir(OUTPUT_ROOT)
@@ -2838,7 +2854,7 @@ try {
 
 # Commit the baseline only after the complete report has been published.
 # An unsuccessful baseline write leaves any previous baseline intact.
-if BASELINE_PAYLOAD != "" {
+if BASELINE_PAYLOAD != "" && (!STRICT_SCAN || len(PARSE_ERRORS) == 0) {
     try {
         write_file_atomic(BASELINE_PATH, BASELINE_PAYLOAD, true)
         BASELINE_WRITTEN := BASELINE_PATH
@@ -2874,8 +2890,11 @@ if KENNEL_INDEX_WRITTEN != "" {
 if KENNEL_METADATA_WRITTEN != "" {
     CLI_LINES := push(CLI_LINES, kv_line("Kennel metadata", KENNEL_METADATA_WRITTEN))
 }
-CLI_LINES := append_lines(CLI_LINES, [
-    kv_line("Scan manifest", OUTPUT + "/scan_manifest.json"),
-    "Done."
-])
+CLI_LINES := push(CLI_LINES, kv_line("Scan manifest", OUTPUT + "/scan_manifest.json"))
+if STRICT_SCAN && len(PARSE_ERRORS) > 0 {
+    CLI_LINES := push(CLI_LINES, "Strict scan failed: " + to_string(len(PARSE_ERRORS)) + " diagnostic(s); baseline unchanged.")
+    print_lines(CLI_LINES)
+    exit(2)
+}
+CLI_LINES := push(CLI_LINES, "Done.")
 print_lines(CLI_LINES)

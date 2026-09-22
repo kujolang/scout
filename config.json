@@ -34,6 +34,7 @@
     ]
   },
   "analysis": {
+    "strict_scan": false,
     "dependencies": true,
     "routes": true,
     "security": true,
