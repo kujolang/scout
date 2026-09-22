@@ -27,6 +27,13 @@ loop; include a fixture, focused regression, README update, and verification evi
   currently requires a stable checkout. Explore file-descriptor-based or isolated
   runtime support before promising safe scanning of adversarial live trees. Add
   reproducible race tests and document the residual trust model.
+  Blocker (2026-09-22): A compatible race-safe rooted prefix-read API is not
+  available in the tested Kujo 1.3.1/1.4.0 runtimes. Existing rooted readers
+  reject in-root aliases and files over 8 MiB; Scout's bounded `io_read_at`
+  still follows pathnames and can reopen after UTF-8 boundary retries. Evidence:
+  Kujo `src/interpreter/native_functions/{filesystem,io}.rs`, Scout
+  `lib/scout_runtime.kujo`, `tests/scripts/test_bounded_source_reads.sh`.
+  Changing the sibling Kujo runtime requires a separate scope decision.
 - [ ] REL-001: Make report and baseline publication recoverable. Reports are written
   individually and `--write-baseline` replaces its destination before the manifest
   completes (`lib/scout_runtime.kujo`, output section). Stage files and publish with
