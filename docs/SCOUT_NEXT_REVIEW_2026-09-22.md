@@ -62,7 +62,8 @@ loop; include a fixture, focused regression, README update, and verification evi
 - [x] REL-003: Adopt the published Kujo 1.5.0 runtime. Linux CI downloads the
   official x64 archive, verifies its pinned SHA-256, and runs the Scout suite
   against that binary. Installation and contributor guidance no longer require
-  the temporary source commit.
+  the temporary source commit. A separate native Windows job verifies the
+  official x64 archive and an end-to-end strict scan with structured artifacts.
 
 ## Verification and scope
 
@@ -173,7 +174,8 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   commit `cc2d7dbb59a8dc05f00d629e100932f56f4062f6`, and that the rooted reader
   commit is in its ancestry.
 - Replaced Scout's source-build CI pin with the official Linux x64 archive and
-  published SHA-256. Added consistency checks tying CI's runtime version to both
-  manifests and rejecting restoration of the temporary source pin.
+  published SHA-256, plus an official Windows x64 artifact workflow. Added
+  consistency checks tying CI's runtime version to both manifests, validating
+  both archive digests, and rejecting restoration of the temporary source pin.
 - Validated the published macOS x64 archive checksum, runtime version, and Scout
   installation smoke locally; hosted Linux verification is recorded by CI.

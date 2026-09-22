@@ -46,6 +46,7 @@ fi
 
 ci_kujo_version="$(awk -F ' ' '/^[[:space:]]*KUJO_VERSION:/ {print $2; exit}' .github/workflows/repo-checks.yml)"
 ci_kujo_sha256="$(awk -F ' ' '/^[[:space:]]*KUJO_LINUX_X64_SHA256:/ {print $2; exit}' .github/workflows/repo-checks.yml)"
+ci_kujo_windows_sha256="$(awk -F ' ' '/^[[:space:]]*KUJO_WINDOWS_X64_SHA256:/ {print $2; exit}' .github/workflows/repo-checks.yml)"
 
 if [[ "$ci_kujo_version" != "$kujo_minimum" ]]; then
 	echo "CI Kujo release must match the declared minimum: ci=$ci_kujo_version minimum=$kujo_minimum"
@@ -54,6 +55,11 @@ fi
 
 if [[ ! "$ci_kujo_sha256" =~ ^[0-9a-f]{64}$ ]]; then
 	echo "CI Kujo release SHA-256 must be a lowercase 64-character digest"
+	exit 1
+fi
+
+if [[ ! "$ci_kujo_windows_sha256" =~ ^[0-9a-f]{64}$ ]]; then
+	echo "CI Windows Kujo release SHA-256 must be a lowercase 64-character digest"
 	exit 1
 fi
 

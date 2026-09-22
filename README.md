@@ -35,9 +35,9 @@ published macOS archive and in Linux CI against the checksum-pinned published
 Linux archive. Python 3,
 `jq`, and a Bash-compatible shell are needed for Scout's test suite, not for
 normal Scout scans. There is no published self-contained Scout executable.
-Scout's full suite is validated on macOS and its fast suite on Linux; Kujo's
-rooted reader has separate Windows conformance checks, but Scout's full Windows
-CLI workflow has not been verified.
+Scout's full suite is validated on macOS and its fast suite on Linux. Hosted CI
+also runs an end-to-end Scout artifact workflow with the official Windows x64
+Kujo binary; the Bash regression suite itself is not a native Windows contract.
 
 ## Quick Start
 
@@ -339,8 +339,8 @@ When adding new analyzers or outputs, also add:
 - `python3` with `jsonschema` installed for schema contract validation
 
 Scout regression scripts auto-resolve a compatible Kujo binary and will prefer `KUJO_BIN` when set.
-CI downloads the official Kujo `1.5.0` Linux x64 archive and verifies its
-pinned SHA-256 before running any Scout checks.
+CI downloads the official Kujo `1.5.0` Linux and Windows x64 archives and
+verifies their pinned SHA-256 digests before running Scout checks.
 
 Run these once before local test loops:
 

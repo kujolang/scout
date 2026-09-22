@@ -9,12 +9,14 @@ on:
 permissions:
   contents: read
 
+env:
+  KUJO_VERSION: 1.5.0
+  KUJO_LINUX_X64_SHA256: cd267f39c1243f6500889fb3678a1a5206ad1ef99c53d7336265ff31267f0675
+  KUJO_WINDOWS_X64_SHA256: a96f6ed80fb4e0b116053e2f9dbb8539dfeacf847c46a9e2496f66bdd2b4d1f4
+
 jobs:
   repo-checks:
     runs-on: ubuntu-latest
-    env:
-      KUJO_VERSION: 1.5.0
-      KUJO_LINUX_X64_SHA256: cd267f39c1243f6500889fb3678a1a5206ad1ef99c53d7336265ff31267f0675
 
     steps:
       - name: Checkout
@@ -90,3 +92,56 @@ jobs:
           test -f "$out_dir/packages/arc001.json"
 
           echo "Fixture smoke scan passed"
+
+  windows-release-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Install official Kujo release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $archive = "kujo-v$env:KUJO_VERSION-windows-x64.zip"
+          $archivePath = Join-Path $env:RUNNER_TEMP $archive
+          $url = "https://github.com/kujolang/kujo/releases/download/v$env:KUJO_VERSION/$archive"
+          Invoke-WebRequest -Uri $url -OutFile $archivePath
+
+          $actual = (Get-FileHash -Algorithm SHA256 $archivePath).Hash.ToLowerInvariant()
+          if ($actual -ne $env:KUJO_WINDOWS_X64_SHA256) {
+            throw "Kujo archive checksum mismatch: $actual"
+          }
+
+          $binDir = Join-Path $env:RUNNER_TEMP "scout-kujo-bin"
+          Expand-Archive -Path $archivePath -DestinationPath $binDir
+          $kujo = Join-Path $binDir "kujo.exe"
+          $reportedVersion = (& $kujo --version).Trim()
+          if ($reportedVersion -ne "kujo $env:KUJO_VERSION") {
+            throw "Unexpected Kujo version: $reportedVersion"
+          }
+          "KUJO_BIN=$kujo" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Run native Windows Scout workflow
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $outputRoot = "tests/tmp/windows-release-smoke"
+          & $env:KUJO_BIN run scout.kujo tests/fixtures/arc001 -o $outputRoot -d 2 --strict --security-export sarif --kennel-index --kennel-metadata
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $manifestPath = Get-ChildItem -Path $outputRoot -Recurse -Filter scan_manifest.json | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $manifestPath) { throw "scan_manifest.json was not generated" }
+          $runDir = Split-Path $manifestPath
+          $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
+          $intelligence = Get-Content -Raw (Join-Path $runDir "intelligence.json") | ConvertFrom-Json
+
+          if ($intelligence.metrics.total_files -ne 2) { throw "Unexpected file count" }
+          if ($manifest.artifacts.security_sarif -ne "security.sarif") { throw "Missing SARIF artifact contract" }
+          foreach ($relativePath in @("README.md", "intelligence.json", "security.sarif", "index.json", "packages/arc001.json")) {
+            if (-not (Test-Path (Join-Path $runDir $relativePath))) {
+              throw "Missing Scout artifact: $relativePath"
+            }
+          }

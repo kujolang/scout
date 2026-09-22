@@ -30,7 +30,8 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 - Publish reports via staging and unique run directories; atomically replace
   accepted baselines after a complete report, and require a Kujo runtime with
   the rooted prefix-read API (minimum release 1.5.0).
-- Install the official checksum-pinned Kujo 1.5.0 binary in CI and document the
+- Install the official checksum-pinned Kujo 1.5.0 Linux and Windows binaries in
+  CI, verify a native Windows Scout artifact workflow, and document the
   published runtime installation path instead of requiring a source build.
 - Scan useful hidden project directories and document production-readiness limits.
 - Sort entries deterministically and use stable merge sorting with precomputed dependency and route keys.

@@ -11,10 +11,10 @@ Scout version values must stay aligned across:
 - VERSION, kujo.toml, and kennel.toml (package `version`)
 
 The minimum runtime version in both manifests is the first published release
-with `read_binary_prefix_beneath` (1.5.0). CI installs the official Linux x64
-release archive and verifies the SHA-256 pinned in the workflow. Update the CI
-version, archive digest, both minimum versions, and runtime compatibility tests
-together when raising the supported runtime floor.
+with `read_binary_prefix_beneath` (1.5.0). CI installs the official Linux and
+Windows x64 release archives and verifies the SHA-256 digests pinned in the
+workflow. Update the CI version, archive digests, both minimum versions, and
+runtime compatibility tests together when raising the supported runtime floor.
 
 CI enforces this via `tests/scripts/check_version_consistency.sh`.
 
