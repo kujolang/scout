@@ -44,11 +44,12 @@ loop; include a fixture, focused regression, README update, and verification evi
   publishing the report and retaining the prior baseline. Default behavior
   remains successful; `tests/scripts/test_strict_partial_scans.sh` covers
   complete, truncated, unavailable, and config cases.
-- [ ] FEAT-001: Expand discovery through opt-in language/plugin rules only after
-  measurement. Route and dependency matching in `lib/scout_runtime.kujo` is
-  framework-specific and largely line-based; collect representative user projects,
-  report precision/recall, then prioritize missing frameworks. Avoid claiming
-  comprehensive cross-language analysis.
+- [x] FEAT-001: Measure route precision/recall for representative local
+  projects, then add opt-in literal Fastify object-route discovery
+  (`--rule fastify-object` / `analysis.optional_rules`). Positive/negative
+  fixtures and the focused test confirm that default output is unchanged and
+  dynamic paths, comments, unrelated receivers, and string examples are not
+  reported as routes. No comprehensive cross-language claim is made.
 - [ ] PERF-002: Benchmark very large repository scans and route/dependency-heavy
   inputs with stable fixture generation. Record wall time, peak memory, and report
   size; use measured hotspots to justify further modularization or indexing.
@@ -94,3 +95,21 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   replacement on strict failure. Updated `config.json` and README.
 - Tested both local Kujo 1.4.0 and 1.3.1 with complete, truncated, unavailable,
   default-mode, and config-enabled scans; see the focused test script.
+
+### 2026-09-22 — FEAT-001
+
+- Before changing route rules, scanned three local project samples with their
+  literal source declarations as the labeled reference set: `crud-api/src`
+  (12/12), `cms/backend/routes` (136/136), and the RAG release-evaluation API
+  example (2/2). For this 150-declaration sample, precision and recall were
+  both 150/150. These counts cover only literal route calls, not runtime-resolved
+  paths or all route forms in those projects.
+- A purpose-built Fastify sample based on the official Fastify route contract
+  had 1/4 literal routes discovered by default (25% recall, 100% precision
+  against four labels). With `fastify-object`, the same sample has 4/4 recall
+  and 4/4 precision. Negative cases exercise dynamic paths, unrelated receivers,
+  comments, and strings. Fixture: `tests/fixtures/optional-rules/fastify/`;
+  test: `tests/scripts/test_optional_fastify_rules.sh` on Kujo 1.3.1/1.4.0.
+- Updated `lib/scout_runtime.kujo`, `config.json`, and README. The opt-in rule
+  handles only single-line literal object calls and does not evaluate Fastify
+  plugin prefix registration or dynamic paths.

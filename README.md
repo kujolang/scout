@@ -104,6 +104,12 @@ Finds HTTP route definitions in popular frameworks:
 - **Go**: Gin (`router.GET`), `http.HandleFunc`
 - **Java/Kotlin**: Spring (`@GetMapping`, `@PostMapping`, `@RequestMapping`)
 - **Kujo**: `.route("GET", "/path", handler)`
+- **Optional Fastify object declarations**: opt into single-line literal
+  `fastify.route({ method: 'POST', url: '/path', ... })` with `--rule fastify-object`.
+  The rule also accepts the `path` alias, but does not infer dynamic values,
+  nested plugin prefixes, or multiline object literals. Fastify's documented
+  [route declaration forms](https://fastify.dev/docs/latest/Reference/Routes/)
+  are broader than this lightweight rule.
 
 ### Security Smell Detection
 Scans for a baseline set of security patterns: hardcoded credentials/tokens, embedded keys, dangerous execution functions (`eval`, `exec`, `system`), XSS sinks, insecure deserialization, and weak hashes. Findings are categorized by severity (critical / high / medium / low).
@@ -146,6 +152,7 @@ Generates standard output files plus optional security exports:
 | `--output-profile P` | Output profile: `full` or `minimal` | `full` |
 | `--quick` | Shortcut for `--output-profile minimal` | disabled |
 | `--strict` | Exit 2 if any scan diagnostic is emitted; preserve reports for inspection | disabled |
+| `--rule NAME` | Enable an optional analyzer rule (currently `fastify-object`; repeatable) | disabled |
 | `-h, --help` | Show help | — |
 | `-v, --version` | Show version | — |
 
@@ -174,7 +181,7 @@ Key config sections:
 
 - `scan`: default depth, max file size, ignored directories, include/exclude defaults
 - `output`: default output directory, path mode, optional Kennel output toggles, optional security export defaults
-- `analysis`: enable/disable dependency/route/security analyzers, metrics collection, baseline visibility, and `strict_scan` (default `false`)
+- `analysis`: enable/disable dependency/route/security analyzers, metrics collection, baseline visibility, `strict_scan` (default `false`), and `optional_rules` (default `[]`)
 
 Common examples:
 
@@ -187,6 +194,9 @@ kujo run scout.kujo -- ./project -d 2 -o ./tmp/reports
 
 # Override configured baseline path and include suppressed findings
 kujo run scout.kujo -- ./project --baseline ./security/scout-baseline.json --show-suppressed
+
+# Include literal Fastify object route declarations when needed
+kujo run scout.kujo -- ./project --rule fastify-object
 ```
 
 ## Architecture

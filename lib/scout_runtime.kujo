@@ -31,6 +31,8 @@ EMIT_KENNEL_METADATA := false
 METRICS_ENABLED := true
 OUTPUT_PROFILE := "full"
 STRICT_SCAN := false
+OPTIONAL_RULES := []
+OPTIONAL_RULE_SEEN := {}
 
 LANGUAGE_MAP := {
     ".py": "Python",
@@ -207,6 +209,29 @@ func normalize_output_profile(value) {
         return "minimal"
     }
     return ""
+}
+
+func literal_option_value(source, key) {
+    key_pos := index_of(source, key + ":")
+    if key_pos < 0 {
+        return ""
+    }
+    tail := trim(substring(source, key_pos + len(key) + 1, len(source)))
+    if !starts_with(tail, "\"") && !starts_with(tail, "'") && !starts_with(tail, "`") {
+        return ""
+    }
+    return first_quoted_value(tail)
+}
+
+func enable_optional_rule(name) {
+    rule := trim(to_string(name))
+    if rule != "fastify-object" {
+        invalid_expected("optional rule", rule, "fastify-object")
+    }
+    if has_key(OPTIONAL_RULE_SEEN, rule) == 0 {
+        OPTIONAL_RULE_SEEN[rule] := true
+        OPTIONAL_RULES := push(OPTIONAL_RULES, rule)
+    }
 }
 
 func is_non_negative_integer_text(value) {
@@ -392,6 +417,11 @@ if file_exists(CONFIG_PATH) {
             if has_key(analysis_doc, "strict_scan") && type(analysis_doc["strict_scan"]) == "bool" {
                 STRICT_SCAN := analysis_doc["strict_scan"]
             }
+            if has_key(analysis_doc, "optional_rules") && type(analysis_doc["optional_rules"]) == "array" {
+                for rule_name in analysis_doc["optional_rules"] {
+                    enable_optional_rule(rule_name)
+                }
+            }
 
             if has_key(analysis_doc, "metrics") && type(analysis_doc["metrics"]) == "bool" {
                 METRICS_ENABLED := analysis_doc["metrics"]
@@ -462,6 +492,7 @@ while I < len(ARGS) {
             "  --output-profile P   Output profile: full|minimal (default: full)",
             "  --quick              Shortcut for --output-profile minimal",
             "  --strict             Exit 2 on partial scans (diagnostics remain in output)",
+            "  --rule NAME         Opt into a rule: fastify-object (repeatable)",
             "  --security-export F  Security export format: sarif|jsonl (repeatable)",
             "  --baseline PATH      Baseline file for suppressed security findings (default: scout-baseline.json)",
             "  --show-suppressed    Include suppressed findings in output",
@@ -606,6 +637,15 @@ while I < len(ARGS) {
     if a == "--strict" {
         handled_option := true
         STRICT_SCAN := true
+    }
+
+    if a == "--rule" {
+        handled_option := true
+        I := I + 1
+        if I >= len(ARGS) {
+            missing_option_value(a)
+        }
+        enable_optional_rule(ARGS[I])
     }
 
     if a == "--security-export" {
@@ -2037,6 +2077,23 @@ for code_file in CODE_FILES {
                     }
 
                     if lang == "JavaScript" || lang == "TypeScript" || lang == "React JSX" || lang == "React TSX" {
+                        # Only literal single-line Fastify object routes are
+                        # eligible; dynamic paths and other receivers are not
+                        # guessed into an endpoint.
+                        if has_key(OPTIONAL_RULE_SEEN, "fastify-object") && !starts_with(trimmed, "//") && contains_unquoted_call(trimmed, "fastify.route(") && index_of(trimmed, "fastify.route({") >= 0 {
+                            fastify_method := upper(literal_option_value(trimmed, "method"))
+                            fastify_path := literal_option_value(trimmed, "url")
+                            if fastify_path == "" {
+                                fastify_path := literal_option_value(trimmed, "path")
+                            }
+                            if starts_with(fastify_path, "/") && index_of("|GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD|", "|" + fastify_method + "|") >= 0 && fastify_method != "" {
+                                fastify_key := fastify_method + "|" + fastify_path + "|" + path
+                                if has_key(ROUTE_SEEN, fastify_key) == 0 {
+                                    ROUTE_SEEN[fastify_key] := true
+                                    ROUTES := push(ROUTES, {"method": fastify_method, "path": fastify_path, "source": out_path})
+                                }
+                            }
+                        }
                         for mk in [".get(", ".post(", ".put(", ".delete(", ".patch(", ".options(", ".head(", ".all("] {
                             if index_of(trimmed, mk) >= 0 {
                                 js_route := first_quoted_value(trimmed)
@@ -2675,6 +2732,11 @@ if STRICT_SCAN {
     strict_flags := INTELLIGENCE["flags"]
     strict_flags["strict_scan"] := true
     INTELLIGENCE["flags"] := strict_flags
+}
+if len(OPTIONAL_RULES) > 0 {
+    optional_flags := INTELLIGENCE["flags"]
+    optional_flags["optional_rules"] := OPTIONAL_RULES
+    INTELLIGENCE["flags"] := optional_flags
 }
 
 try {
