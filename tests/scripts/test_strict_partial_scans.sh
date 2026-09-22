@@ -28,7 +28,7 @@ cmp "$work/previous.json" "$work/baseline.json"
 run_dir="$(awk -F': ' '/^Output: /{print $2}' "$work/strict.log" | tail -n 1)"
 test -f "$run_dir/scan_manifest.json"
 jq -e '.flags.strict_scan == true and ([.parse_errors[].error] | index("truncated_500000b") != null and index("path_unavailable") != null)' "$run_dir/intelligence.json" >/dev/null
-rg -q 'Strict scan failed: 2 diagnostic' "$work/strict.log"
+grep -q 'Strict scan failed: 2 diagnostic' "$work/strict.log"
 
 printf '{"analysis":{"strict_scan":true},"output":{"default_dir":"%s"}}\n' "$REPO_ROOT/$work/reports" > "$work/config.json"
 set +e

@@ -28,5 +28,5 @@ set +e
 status=$?
 set -e
 test "$status" -ne 0
-rg -q 'invalid optional rule' "$work/invalid.log"
+grep -q 'invalid optional rule' "$work/invalid.log"
 echo "Fastify opt-in route precision, config, and default contracts passed"
