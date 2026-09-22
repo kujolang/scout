@@ -11,7 +11,7 @@ resolve_kujo_bin "$REPO_ROOT"
 
 extract_slug_prefix() {
 	local base_name="$1"
-	echo "$base_name" | sed -E 's/-[0-9]{8}-[0-9]{6}-[0-9]+$//'
+	echo "$base_name" | sed -E 's/-[0-9]{8}-[0-9]{6}-[0-9]+-[0-9a-f]{8}$//'
 }
 
 run_case() {

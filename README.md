@@ -128,7 +128,7 @@ Generates standard output files plus optional security exports:
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-o, --output DIR` | Output root directory (run writes to `DIR/<project>-<timestamp>/`) | `./results` |
+| `-o, --output DIR` | Output root directory (run writes to `DIR/<project>-<timestamp>-<run-id>/`) | `./results` |
 | `-d, --max-depth N` | Max directory depth | `6` |
 | `--skip-security` | Skip security smell scan | — |
 | `--security-export F` | Emit security findings as `sarif` or `jsonl` (repeatable) | disabled |
@@ -152,7 +152,7 @@ Generates standard output files plus optional security exports:
 
 Each scan run creates a timestamped folder:
 
-`<output-root>/<project-name>-YYYYMMDD-HHmmss-<epoch-ms>/`
+`<output-root>/<project-name>-YYYYMMDD-HHmmss-<epoch-ms>-<run-id>/`
 
 By default this is under `./results` (inside this repository when run from repo root).
 
@@ -392,9 +392,14 @@ to be reviewed and regenerated with `--write-baseline`. Old baselines remain rea
 Valid JSON manifests use structured parsing exclusively; malformed manifests retain
 best-effort line recovery.
 
-The scan manifest is written last, after the artifacts. Report publication and baseline
-replacement are not an atomic transaction; avoid concurrent writers to the same run
-or baseline and consume artifacts only after a successful scan receipt.
+Reports are written into a private staging directory and the whole directory is
+renamed into a unique run directory after its manifest is written. A failed write
+can leave an unpublished `.scout-stage-*` directory under the output root; do not
+consume it as a complete run. A baseline update uses atomic replacement only after
+the report is published, preserving the previous baseline on failed writes. The
+report and baseline are not one atomic transaction; a baseline failure can leave
+a complete published report while the CLI exits nonzero. Avoid concurrent baseline
+writers and consume reports only from published directories with a manifest.
 
 The hardening audit and reproducible benchmark command are in
 [`docs/audits/repository-hardening.md`](docs/audits/repository-hardening.md).

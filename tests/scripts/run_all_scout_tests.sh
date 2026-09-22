@@ -39,6 +39,7 @@ tests=(
 	tests/scripts/test_hardening.sh
 	tests/scripts/test_hidden_project_dirs.sh
 	tests/scripts/test_bounded_source_reads.sh
+	tests/scripts/test_recoverable_publication.sh
 )
 
 if [[ "${SCOUT_SKIP_SLOW:-0}" == "1" ]]; then

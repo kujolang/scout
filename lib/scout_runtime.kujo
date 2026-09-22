@@ -745,8 +745,9 @@ if PROJECT_NAME == "" {
 }
 
 PROJECT_SLUG := sanitize_slug(PROJECT_NAME)
-RUN_TS := format_date(now(), "YYYYMMDD-HHmmss") + "-" + to_string(current_timestamp())
+RUN_TS := format_date(now(), "YYYYMMDD-HHmmss") + "-" + to_string(current_timestamp()) + "-" + substring(uuid_v4(), 0, 8)
 OUTPUT := OUTPUT_ROOT + "/" + PROJECT_SLUG + "-" + RUN_TS
+STAGING := OUTPUT_ROOT + "/.scout-stage-" + RUN_TS
 
 OUTPUT_ROOT_ABS := ""
 OUTPUT_BASE := basename_from_path(OUTPUT_ROOT)
@@ -2667,21 +2668,21 @@ try {
 }
 
 try {
-    create_dir(OUTPUT)
+    create_dir(STAGING)
 } except err {
-    error_exit("unable to create output directory: " + OUTPUT)
+    error_exit("unable to create staging directory: " + STAGING)
 }
 
 if OUTPUT_PROFILE == "full" {
-    write_file(OUTPUT + "/FILE_TREE.md", FILE_TREE_MD)
+    write_file_atomic(STAGING + "/FILE_TREE.md", FILE_TREE_MD)
 }
-write_file(OUTPUT + "/README.md", REPORT_MD)
-write_file(OUTPUT + "/llms.txt", LLMS_TXT)
+write_file_atomic(STAGING + "/README.md", REPORT_MD)
+write_file_atomic(STAGING + "/llms.txt", LLMS_TXT)
 if OUTPUT_PROFILE == "full" {
-    write_file(OUTPUT + "/AGENTS.md", AGENTS_MD)
-    write_file(OUTPUT + "/CHECKLIST.md", CHECKLIST_MD)
+    write_file_atomic(STAGING + "/AGENTS.md", AGENTS_MD)
+    write_file_atomic(STAGING + "/CHECKLIST.md", CHECKLIST_MD)
 }
-write_file(OUTPUT + "/intelligence.json", to_json(INTELLIGENCE))
+write_file_atomic(STAGING + "/intelligence.json", to_json(INTELLIGENCE))
 
 SECURITY_EXPORT_FILES := []
 if !SKIP_SEC {
@@ -2689,11 +2690,11 @@ if !SKIP_SEC {
     while export_i < len(SECURITY_EXPORT_FORMATS) {
         active_export_format := SECURITY_EXPORT_FORMATS[export_i]
         if active_export_format == "sarif" {
-            write_file(OUTPUT + "/security.sarif", to_json(build_sarif_security_export(SECURITY_FINDINGS, SECURITY_PATTERNS, VERSION)))
+            write_file_atomic(STAGING + "/security.sarif", to_json(build_sarif_security_export(SECURITY_FINDINGS, SECURITY_PATTERNS, VERSION)))
             SECURITY_EXPORT_FILES := push(SECURITY_EXPORT_FILES, "security.sarif")
         }
         if active_export_format == "jsonl" {
-            write_file(OUTPUT + "/security.jsonl", build_jsonl_security_export(SECURITY_FINDINGS))
+            write_file_atomic(STAGING + "/security.jsonl", build_jsonl_security_export(SECURITY_FINDINGS))
             SECURITY_EXPORT_FILES := push(SECURITY_EXPORT_FILES, "security.jsonl")
         }
 
@@ -2702,6 +2703,7 @@ if !SKIP_SEC {
 }
 
 BASELINE_WRITTEN := ""
+BASELINE_PAYLOAD := ""
 if !SKIP_SEC && WRITE_BASELINE && BASELINE_PATH != "" {
     baseline_values := []
     baseline_seen := {}
@@ -2724,8 +2726,7 @@ if !SKIP_SEC && WRITE_BASELINE && BASELINE_PATH != "" {
         "fingerprints": baseline_values
     }
 
-    write_file(BASELINE_PATH, to_json(baseline_payload))
-    BASELINE_WRITTEN := BASELINE_PATH
+    BASELINE_PAYLOAD := to_json(baseline_payload)
 }
 
 KENNEL_INDEX_WRITTEN := ""
@@ -2749,7 +2750,7 @@ if EMIT_KENNEL_INDEX {
         }]
     }
 
-    write_file(OUTPUT + "/index.json", to_json(kennel_index_payload))
+    write_file_atomic(STAGING + "/index.json", to_json(kennel_index_payload))
     KENNEL_INDEX_WRITTEN := OUTPUT + "/index.json"
 }
 
@@ -2776,8 +2777,8 @@ if EMIT_KENNEL_METADATA {
         }]
     }
 
-    create_dir(OUTPUT + "/packages")
-    write_file(OUTPUT + "/packages/" + PROJECT_SLUG + ".json", to_json(kennel_metadata_payload))
+    create_dir(STAGING + "/packages")
+    write_file_atomic(STAGING + "/packages/" + PROJECT_SLUG + ".json", to_json(kennel_metadata_payload))
     KENNEL_METADATA_WRITTEN := OUTPUT + "/packages/" + PROJECT_SLUG + ".json"
 }
 
@@ -2825,7 +2826,26 @@ SCAN_MANIFEST := {
     "artifacts": MANIFEST_ARTIFACTS
 }
 
-write_file(OUTPUT + "/scan_manifest.json", to_json(SCAN_MANIFEST))
+write_file_atomic(STAGING + "/scan_manifest.json", to_json(SCAN_MANIFEST))
+if file_exists(OUTPUT) {
+    error_exit("output directory already exists: " + OUTPUT)
+}
+try {
+    rename_file(STAGING, OUTPUT)
+} except err {
+    error_exit("unable to publish output directory: " + to_string(err))
+}
+
+# Commit the baseline only after the complete report has been published.
+# An unsuccessful baseline write leaves any previous baseline intact.
+if BASELINE_PAYLOAD != "" {
+    try {
+        write_file_atomic(BASELINE_PATH, BASELINE_PAYLOAD, true)
+        BASELINE_WRITTEN := BASELINE_PATH
+    } except err {
+        error_exit("unable to publish baseline: " + to_string(err))
+    }
+}
 
 CLI_LINES := [
     kv_line("Scanning", TARGET),

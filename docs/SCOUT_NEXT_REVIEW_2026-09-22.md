@@ -34,11 +34,11 @@ loop; include a fixture, focused regression, README update, and verification evi
   Kujo `src/interpreter/native_functions/{filesystem,io}.rs`, Scout
   `lib/scout_runtime.kujo`, `tests/scripts/test_bounded_source_reads.sh`.
   Changing the sibling Kujo runtime requires a separate scope decision.
-- [ ] REL-001: Make report and baseline publication recoverable. Reports are written
-  individually and `--write-baseline` replaces its destination before the manifest
-  completes (`lib/scout_runtime.kujo`, output section). Stage files and publish with
-  atomic rename where the runtime supports it; test injected write failure and
-  ensure old baselines survive unsuccessful scans.
+- [x] REL-001: Make report and baseline publication recoverable. Write to a
+  unique staging directory, publish the completed directory by rename, and
+  atomically replace an accepted baseline only after the report is published.
+  `tests/scripts/test_recoverable_publication.sh` injects report and baseline
+  write failures and checks concurrent run isolation.
 - [ ] REL-002: Define explicit failure policy for partial scans. `parse_errors` can
   contain read failures or truncation while the process still exits successfully.
   Add an opt-in strict CI flag, document its exit status, and cover complete,
@@ -75,3 +75,13 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   1.4.0 and 1.3.1. Peak resident size for the 64 MiB fixture scan on this macOS
   host was 23,236,608 bytes (`/usr/bin/time -l`); this is not a CI threshold.
 - README now describes the read budget and the residual live-tree race.
+
+### 2026-09-22 — REL-001
+
+- Changed `lib/scout_runtime.kujo` output publication to a private staging
+  directory, added a per-run random suffix, and made baseline replacement
+  atomic after the complete report is published.
+- Tested injected output write failure, denied baseline write with an existing
+  file, normal replacement, and two concurrent report writers using local
+  Kujo 1.4.0 and 1.3.1. The baseline and the directory are individually atomic,
+  not one cross-file transaction; README states the residual limitation.
