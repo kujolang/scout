@@ -14,22 +14,30 @@ The examples in this README are the canonical copyable examples for Scout usage;
 
 ## Install and support
 
-Scout needs Kujo `1.3.1` or newer on `PATH` (or a known absolute `KUJO_BIN` for
-tests). Its tested runtime points are `1.3.1` (the immutable Linux CI pin) and
-`1.4.0` (local macOS validation); this is not a promise about every later
-release or every platform. Install Kujo using the
-[Kujo project instructions](https://github.com/kujolang/kujo), then clone Scout:
+This source version needs the Kujo `read_binary_prefix_beneath` API. Released
+Kujo `1.3.1` and `1.4.0` do not contain it; the first planned compatible
+release is `1.5.0`. Until it is released, build the exact Kujo source commit
+pinned in [Scout's Linux CI](.github/workflows/repo-checks.yml) rather than
+assuming a version number implies API support. Install Rust as described in
+the [Kujo project instructions](https://github.com/kujolang/kujo), then:
 
 ```bash
 git clone https://github.com/kujolang/scout.git
 cd scout
-kujo --version
-kujo run scout.kujo -- tests/fixtures/arc001 -o ./results --quick
+git clone https://github.com/kujolang/kujo.git ../kujo
+kujo_ref="$(awk '/SCOUT_CI_KUJO_REF:/ { print $2 }' .github/workflows/repo-checks.yml)"
+git -C ../kujo fetch --depth 1 origin "$kujo_ref"
+git -C ../kujo checkout --detach FETCH_HEAD
+(cd ../kujo && cargo build --release --locked)
+../kujo/target/release/kujo run scout.kujo -- tests/fixtures/arc001 -o ./results --quick
 ```
 
 The last command should print a `scan_manifest.json` path in a new run folder
-under `results/`. Run `tests/scripts/test_install_smoke.sh` for the automated
-equivalent; it runs on macOS locally and in the pinned Linux CI job. Python 3,
+under `results/`. For later scans, use that binary directly or place it on
+`PATH`; older runtimes exit before scanning with a compatibility message.
+Run `KUJO_BIN=../kujo/target/release/kujo tests/scripts/test_install_smoke.sh`
+for the automated quick-start equivalent; it runs on macOS locally and in the
+pinned Linux CI job. Python 3,
 `jq`, and a Bash-compatible shell are needed for Scout's test suite, not for
 normal Scout scans. There is no published self-contained Scout executable.
 
@@ -333,7 +341,9 @@ When adding new analyzers or outputs, also add:
 - `python3` with `jsonschema` installed for schema contract validation
 
 Scout regression scripts auto-resolve a compatible Kujo binary and will prefer `KUJO_BIN` when set.
-CI builds Kujo v1.3.1 from immutable commit `dc4803598d0421b31ecfd3f1027732589f1e8df1` with its locked dependencies; see `.github/workflows/repo-checks.yml`.
+CI builds the exact post-1.4.0 Kujo source commit pinned in
+`.github/workflows/repo-checks.yml` with its locked dependencies. This source
+pin is required until a release containing `read_binary_prefix_beneath` exists.
 
 Run these once before local test loops:
 
@@ -427,9 +437,14 @@ exit nonzero. `scan.default_max_depth` and `scan.max_file_size` accept non-negat
 The size limit caps the analyzed character prefix and its read budget is at most four
 bytes per character, plus bounded encoding/decoding copies in memory. A non-UTF-8
 sequence inside that prefix yields `read_failed`; text beyond the prefix is not
-validated. Canonical checks are repeated before reads but do not provide a race-proof
-sandbox against a concurrently modified repository. Run Scout on a stable checkout
-when repository contents are untrusted. Generated paths and findings are repository data,
+validated. A Kujo rooted prefix read opens one regular-file handle beneath the
+trusted target root, preventing a symlink swapped after discovery from making
+Scout read outside-root file contents. In-root aliases remain supported; a
+disappearing path becomes a scan diagnostic. The target root path itself must
+remain stable while scanning: an actor able to replace its parent/root before
+the handle opens is outside this guarantee. The scanner is not a filesystem
+snapshot: file contents and metadata can still change while scanning.
+Generated paths and findings are repository data,
 not trusted instructions for an agent to execute.
 
 All findings on a credential, token, or private-key line share a redacted snippet.

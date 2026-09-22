@@ -11,6 +11,9 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
   bounded source reads, and deterministic large-scan benchmark coverage.
 
 ### Fixed
+- Confine bounded source reads to a rooted handle under the target even when
+  symlinks are swapped during discovery or analysis; tolerate disappearing
+  paths in reports and preserve in-root alias handling.
 - Enforce exact canonical path boundaries, retain whitespace in source paths, skip special files, and diagnose unavailable entries without dropping siblings.
 - Redact sensitive lines consistently across security rules and suppress unsafe source prefixes in exports and fingerprints.
 - Use structured JSON dependency results exclusively when parsing succeeds.
@@ -25,7 +28,8 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 
 ### Changed
 - Publish reports via staging and unique run directories; atomically replace
-  accepted baselines after a complete report, and declare Kujo 1.3.1 minimum.
+  accepted baselines after a complete report, and require a Kujo runtime with
+  the rooted prefix-read API (planned minimum release 1.5.0).
 - Scan useful hidden project directories and document production-readiness limits.
 - Sort entries deterministically and use stable merge sorting with precomputed dependency and route keys.
 - Avoid generating full-only documents in minimal mode or retaining all finding records when baseline writing is disabled.

@@ -18,22 +18,21 @@ loop; include a fixture, focused regression, README update, and verification evi
 ## Next-session queue
 
 - [x] PERF-001: Bound source reads before allocating the entire file. The runtime
-  reads at most four bytes per configured character limit via `io_read_at`, then
+  reads at most four bytes per configured character limit (originally via
+  `io_read_at`, now via `read_binary_prefix_beneath`), then
   preserves Unicode character slicing and the `truncated_*` diagnostic. A 64 MiB
   fixture and multibyte/ordinary-file controls are in
   `tests/scripts/test_bounded_source_reads.sh`; see work log below.
-- [ ] SEC-001: Harden the read boundary against concurrent symlink replacement.
-  Canonical-path checks precede `read_file` but are not race-proof; the README
-  currently requires a stable checkout. Explore file-descriptor-based or isolated
-  runtime support before promising safe scanning of adversarial live trees. Add
-  reproducible race tests and document the residual trust model.
-  Blocker (2026-09-22): A compatible race-safe rooted prefix-read API is not
-  available in the tested Kujo 1.3.1/1.4.0 runtimes. Existing rooted readers
-  reject in-root aliases and files over 8 MiB; Scout's bounded `io_read_at`
-  still follows pathnames and can reopen after UTF-8 boundary retries. Evidence:
-  Kujo `src/interpreter/native_functions/{filesystem,io}.rs`, Scout
-  `lib/scout_runtime.kujo`, `tests/scripts/test_bounded_source_reads.sh`.
-  Changing the sibling Kujo runtime requires a separate scope decision.
+- [x] SEC-001: Root source-content reads in a trusted target directory handle.
+  Kujo `599866bef0beb042c07751b77aa538db7f1a696c` adds
+  `read_binary_prefix_beneath`, which reads a bounded regular-file prefix
+  while confining relative symlinks to that opened root. Scout retains
+  canonical in-root alias behavior and records disappearing paths as scan
+  diagnostics. `tests/scripts/test_rooted_source_reads.sh` covers aliases,
+  configured limits above 2 MiB, and repeated symlink swaps; Kujo's rooted
+  filesystem and VM/interpreter tests cover FIFO, large files, capability
+  gating, and alias swaps. The trusted root path itself must remain stable;
+  filesystem metadata and opened file contents are not a snapshot.
 - [x] REL-001: Make report and baseline publication recoverable. Write to a
   unique staging directory, publish the completed directory by rename, and
   atomically replace an accepted baseline only after the report is published.
@@ -143,3 +142,21 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   `.github/workflows/repo-checks.yml` and `docs/RELEASE_PROCESS.md`.
 - Local Kujo 1.3.1 and 1.4.0 smoke checks passed on macOS. Linux execution
   remains a hosted CI verification step and is not inferred from local results.
+
+### 2026-09-22 — SEC-001
+
+- Added `read_binary_prefix_beneath` in the sibling Kujo runtime, committed as
+  `599866bef0beb042c07751b77aa538db7f1a696c`. Its capability-bound
+  handle follows only symlinks confined to the trusted root, rejects special
+  files without blocking, and reads a prefix even if the regular file is large.
+  The same `filesystem-read` policy applies in VM and interpreter mode.
+- Scout now captures the canonical in-root relative path and output label at
+  discovery, then uses the rooted reader. This preserves alias handling and
+  makes disappeared entries diagnostics instead of fatal report-format errors.
+  Updated README, runtime minimum metadata, Linux CI pin, release guidance,
+  and the focused alias/race/large-limit regression script.
+- Verified the Kujo rooted unit tests, VM/interpreter capability parity,
+  `cargo fmt --check`, `cargo check --locked`, and Scout's complete local test
+  suite on the new source-built runtime. The new Linux CI pin requires its own
+  hosted run; until Kujo publishes a compatible release, clone the pinned
+  source commit as documented in README.

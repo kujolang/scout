@@ -721,6 +721,14 @@ if !path_is_dir(TARGET) {
 
 TARGET_ABS := path_absolute(TARGET)
 
+# Older Kujo releases cannot confine large prefix reads to the target root.
+# Fail before scanning rather than publishing a quietly partial report.
+try {
+    prefix_reader_kind := type(read_binary_prefix_beneath)
+} except err {
+    error_exit("this Scout build requires Kujo with read_binary_prefix_beneath; see README install instructions")
+}
+
 PATH_MODE := trim(PATH_MODE)
 if PATH_MODE != "relative" && PATH_MODE != "absolute" {
     invalid_expected("path mode", PATH_MODE, "relative|absolute")
@@ -938,6 +946,8 @@ while len(LEVEL_DIRS) > 0 {
                                     if include_as_code {
                                         CODE_FILES := push(CODE_FILES, {
                                             "path": full_path,
+                                            "out_path": format_output_path(full_path, TARGET_ABS, PATH_MODE),
+                                            "relative_source_path": rel_path,
                                             "name": item,
                                             "lang": lang,
                                             "size": file_size_bytes
@@ -956,7 +966,15 @@ while len(LEVEL_DIRS) > 0 {
                 }
             }
         } except err {
-            PARSE_ERRORS := push(PARSE_ERRORS, {"file": format_output_path(dir_path, TARGET_ABS, PATH_MODE), "error": "directory_read_failed"})
+            error_dir_path := dir_path
+            try {
+                error_dir_path := format_output_path(dir_path, TARGET_ABS, PATH_MODE)
+            } except path_err {
+                # The directory may have vanished between list_dir and this
+                # diagnostic; keep reporting rather than failing the scan.
+                error_dir_path := dir_path
+            }
+            PARSE_ERRORS := push(PARSE_ERRORS, {"file": error_dir_path, "error": "directory_read_failed"})
         }
     }
 
@@ -986,7 +1004,7 @@ SUPPRESSED_SECURITY_FINDINGS := []
 
 for code_file in CODE_FILES {
     path := code_file["path"]
-    out_path := format_output_path(path, TARGET_ABS, PATH_MODE)
+    out_path := code_file["out_path"]
     name := code_file["name"]
     lang := code_file["lang"]
     size := code_file["size"]
@@ -1008,35 +1026,31 @@ for code_file in CODE_FILES {
     truncated := false
 
     try {
-        # Recheck after discovery; this reduces, but cannot eliminate, rename races.
-        if is_path_within_target(path, TARGET_ABS) {
-            # The Kujo text reader loads the entire file and has a runtime
-            # ceiling. Read only the analysis prefix through bounded I/O.
-            # Decode with the same strict UTF-8 behavior as read_file.
-            # len(string) counts Unicode characters. Four bytes per character
-            # bounds the read while preserving the old character-prefix limit.
-            max_read_bytes := MAX_FILE_SIZE * 4
-            prefix_bytes := io_read_at(path, 0, max_read_bytes)
-            decoded := false
-            trim_bytes := 0
-            while trim_bytes < 4 && !decoded {
-                try {
-                    if trim_bytes > 0 {
-                        prefix_bytes := io_read_at(path, 0, max_read_bytes - trim_bytes)
-                    }
-                    content := decode_base64_utf8(encode_base64(prefix_bytes))
-                    decoded := true
-                } except err {
-                    trim_bytes := trim_bytes + 1
+        # The canonical in-root path was captured during discovery; the reader
+        # confines every actual open to the trusted root even if the entry
+        # changes in the meantime. A vanished entry becomes read_failed.
+        relative_source_path := code_file["relative_source_path"]
+        max_read_bytes := MAX_FILE_SIZE * 4
+        prefix_bytes := read_binary_prefix_beneath(TARGET_ABS, relative_source_path, max_read_bytes)
+        decoded := false
+        trim_bytes := 0
+        while trim_bytes < 4 && !decoded {
+            try {
+                if trim_bytes > 0 {
+                    prefix_bytes := read_binary_prefix_beneath(TARGET_ABS, relative_source_path, max_read_bytes - trim_bytes)
                 }
-            }
-            if !decoded {
-                # An invalid UTF-8 sequence within the prefix still fails,
-                # as it did with read_file; only a cut final character heals.
                 content := decode_base64_utf8(encode_base64(prefix_bytes))
+                decoded := true
+            } except err {
+                trim_bytes := trim_bytes + 1
             }
-            read_ok := true
         }
+        if !decoded {
+            # An invalid UTF-8 sequence within the prefix still fails,
+            # as it did with read_file; only a cut final character heals.
+            content := decode_base64_utf8(encode_base64(prefix_bytes))
+        }
+        read_ok := true
     } except err {
         read_ok := false
     }
@@ -2492,7 +2506,7 @@ if METRICS_ENABLED {
     largest_files_out := []
     for lf in METRICS["largest_files"] {
         largest_files_out := push(largest_files_out, {
-            "path": format_output_path(lf["path"], TARGET_ABS, PATH_MODE),
+            "path": lf["out_path"],
             "name": lf["name"],
             "lang": lf["lang"],
             "size": lf["size"]

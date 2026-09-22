@@ -10,9 +10,11 @@ Scout version values must stay aligned across:
 - config.json (`tool.version`)
 - VERSION, kujo.toml, and kennel.toml (package `version`)
 
-The minimum runtime version in both manifests must match the CI-pinned tested
-Kujo 1.3.1. Update the pin, both minimum versions, and runtime compatibility
-tests together before changing the support floor.
+The minimum runtime version in both manifests is the first planned release
+with `read_binary_prefix_beneath` (1.5.0). Until that release exists, Scout
+requires the post-1.4.0 Kujo source commit pinned in CI. Update the pin, both
+minimum versions, and runtime compatibility tests together when the API is
+released; a version string alone does not prove that the API exists.
 
 CI enforces this via `tests/scripts/check_version_consistency.sh`.
 

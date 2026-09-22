@@ -39,8 +39,8 @@ if [[ "$scout_version" != "$version_file" || "$scout_version" != "$kujo_project_
 	exit 1
 fi
 
-if [[ "$kujo_minimum" != "1.3.1" || "$kennel_minimum" != "1.3.1" ]]; then
-	echo "Minimum Kujo version must match the pinned tested CI runtime (1.3.1)"
+if [[ "$kujo_minimum" != "1.5.0" || "$kennel_minimum" != "1.5.0" ]]; then
+	echo "Minimum declared Kujo release must support read_binary_prefix_beneath (planned 1.5.0)"
 	exit 1
 fi
 

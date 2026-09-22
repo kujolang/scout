@@ -13,8 +13,8 @@ jobs:
   repo-checks:
     runs-on: ubuntu-latest
     env:
-      # Kujo v1.3.1, pinned to the peeled release commit.
-      SCOUT_CI_KUJO_REF: dc4803598d0421b31ecfd3f1027732589f1e8df1
+      # Post-1.4.0 Kujo source with the rooted prefix-read API; unreleased.
+      SCOUT_CI_KUJO_REF: 599866bef0beb042c07751b77aa538db7f1a696c
 
     steps:
       - name: Checkout
