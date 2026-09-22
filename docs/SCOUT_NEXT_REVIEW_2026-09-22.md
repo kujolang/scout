@@ -50,9 +50,11 @@ loop; include a fixture, focused regression, README update, and verification evi
   fixtures and the focused test confirm that default output is unchanged and
   dynamic paths, comments, unrelated receivers, and string examples are not
   reported as routes. No comprehensive cross-language claim is made.
-- [ ] PERF-002: Benchmark very large repository scans and route/dependency-heavy
-  inputs with stable fixture generation. Record wall time, peak memory, and report
-  size; use measured hotspots to justify further modularization or indexing.
+- [x] PERF-002: Benchmark large repository scans and route/dependency-heavy
+  inputs with deterministic fixture generation. Record wall time, child CPU,
+  peak memory, report bytes, fixture digests, and verified route/dependency
+  counts; use measured hotspots to prioritize future optimizations. The fast
+  benchmark contract runs in the aggregate suite without timing thresholds.
 - [ ] DOC-001: Publish supported Kujo version range and reproducible installation
   instructions with CI parity. Keep `VERSION`, `config.json`, manifests, and release
   notes aligned; add tested macOS/Linux examples and state platform coverage honestly.
@@ -113,3 +115,18 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
 - Updated `lib/scout_runtime.kujo`, `config.json`, and README. The opt-in rule
   handles only single-line literal object calls and does not evaluate Fastify
   plugin prefix registration or dynamic paths.
+
+### 2026-09-22 — PERF-002
+
+- Added `tests/scripts/benchmark_large_scans.py` and a fast deterministic
+  receipt check. Full benchmark on macOS / Kujo 1.4.0 (one run, observational):
+  1,024 small source files / 1,024 routes+deps took 30.293s wall, 47,861,760
+  bytes peak RSS, and 186,276 report bytes; 32 files / 2,048 routes+deps took
+  50.067s wall, 76,525,568 bytes RSS, and 400,960 report bytes; two 32 MiB
+  sources took 0.259s wall, 40,271,872 bytes RSS, and 2,796 report bytes.
+  Exact fixture digests, CPU time, and artifact counts are preserved in
+  `docs/audits/artifacts/large-scan-benchmark.json`.
+- Route/dependency-heavy scans are the measured hotspot, not large content reads.
+  Investigate per-record array construction and report assembly before indexing;
+  any algorithm change needs profile-backed before/after measurements and output
+  equivalence tests. No broad speedup claim is made from one host/run.

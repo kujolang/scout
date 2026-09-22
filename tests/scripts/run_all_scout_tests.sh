@@ -42,6 +42,7 @@ tests=(
 	tests/scripts/test_recoverable_publication.sh
 	tests/scripts/test_strict_partial_scans.sh
 	tests/scripts/test_optional_fastify_rules.sh
+	tests/scripts/test_large_benchmark_contract.sh
 )
 
 if [[ "${SCOUT_SKIP_SLOW:-0}" == "1" ]]; then

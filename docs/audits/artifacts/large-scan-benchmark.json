@@ -1,0 +1,48 @@
+{
+  "host": "Darwin",
+  "measurements": {
+    "large_source": {
+      "artifact_count": 4,
+      "child_cpu_seconds": 0.189,
+      "dependencies": 2,
+      "diagnostics": 2,
+      "elapsed_seconds": 0.259,
+      "fixture_sha256": "e683c3601eee4ddad1b365aeff58747a1d3366d498e0d6842ac96c611209729e",
+      "peak_rss_bytes": 40271872,
+      "report_bytes": 2796,
+      "routes": 0,
+      "source_bytes": 67108894,
+      "source_files": 2
+    },
+    "many_files": {
+      "artifact_count": 4,
+      "child_cpu_seconds": 27.535,
+      "dependencies": 1024,
+      "diagnostics": 0,
+      "elapsed_seconds": 30.293,
+      "fixture_sha256": "5290f70263d177b8d1208ed0f1e7a7df206bfdb688cce8b10b3ac2d1e4495bd2",
+      "peak_rss_bytes": 47861760,
+      "report_bytes": 186276,
+      "routes": 1024,
+      "source_bytes": 38740,
+      "source_files": 1024
+    },
+    "route_heavy": {
+      "artifact_count": 4,
+      "child_cpu_seconds": 47.55,
+      "dependencies": 2048,
+      "diagnostics": 0,
+      "elapsed_seconds": 50.067,
+      "fixture_sha256": "f66d153e7681fcc3e731f130e84e05cb5d73813126b6ad0f4626052b87c85a15",
+      "peak_rss_bytes": 76525568,
+      "report_bytes": 400960,
+      "routes": 2048,
+      "source_bytes": 90240,
+      "source_files": 32
+    }
+  },
+  "mode": "full",
+  "note": "Observational child-process measurements; no CI speed thresholds.",
+  "runtime_version": "kujo 1.4.0",
+  "tool": "scout-large-benchmark-v1"
+}

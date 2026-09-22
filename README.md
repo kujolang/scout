@@ -253,6 +253,18 @@ Run a fast path for local iteration (skips slow ARC-002 root scan):
 SCOUT_SKIP_SLOW=1 tests/scripts/run_all_scout_tests.sh
 ```
 
+For observational large-repository profiling (not a CI latency gate):
+
+```bash
+python3 tests/scripts/benchmark_large_scans.py --kujo /path/to/kujo --output tests/tmp/large-benchmark.json
+```
+
+The script generates deterministic temporary many-file, route-heavy, and large-source
+workloads, validates their output counts, and records wall time, child CPU, peak
+resident memory, and report bytes. See the checked-in
+[measurement receipt](docs/audits/artifacts/large-scan-benchmark.json) for one host;
+do not treat those numbers as portable service-level guarantees.
+
 Run focused suites:
 
 ```bash
