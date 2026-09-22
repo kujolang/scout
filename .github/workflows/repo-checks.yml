@@ -13,8 +13,8 @@ jobs:
   repo-checks:
     runs-on: ubuntu-latest
     env:
-      # Post-1.4.0 Kujo source with the rooted prefix-read API; unreleased.
-      SCOUT_CI_KUJO_REF: 7f4a288587710003c60869c016c8f4d97ca3b8af
+      KUJO_VERSION: 1.5.0
+      KUJO_LINUX_X64_SHA256: cd267f39c1243f6500889fb3678a1a5206ad1ef99c53d7336265ff31267f0675
 
     steps:
       - name: Checkout
@@ -34,22 +34,19 @@ jobs:
 
           echo "Repo checks passed"
 
-      - name: Install pinned Kujo runtime
+      - name: Install official Kujo release
         run: |
           set -euo pipefail
 
-          rm -rf /tmp/kujo-runtime "$GITHUB_WORKSPACE/.ci-bin"
-          git init /tmp/kujo-runtime
-          cd /tmp/kujo-runtime
-          git remote add origin https://github.com/kujolang/kujo.git
-          git fetch --depth 1 origin "$SCOUT_CI_KUJO_REF"
-          git checkout --detach FETCH_HEAD
-          test "$(git rev-parse HEAD)" = "$SCOUT_CI_KUJO_REF"
-          cargo build --release --locked
           mkdir -p "$GITHUB_WORKSPACE/.ci-bin"
-          install -m 0755 target/release/kujo "$GITHUB_WORKSPACE/.ci-bin/kujo"
+          archive="kujo-v${KUJO_VERSION}-linux-x64.tar.gz"
+          curl --fail --location --retry 3 \
+            "https://github.com/kujolang/kujo/releases/download/v${KUJO_VERSION}/${archive}" \
+            --output "/tmp/${archive}"
+          printf '%s  %s\n' "$KUJO_LINUX_X64_SHA256" "/tmp/${archive}" | sha256sum --check --strict
+          tar -xzf "/tmp/${archive}" -C "$GITHUB_WORKSPACE/.ci-bin"
 
-          "$GITHUB_WORKSPACE/.ci-bin/kujo" --version
+          test "$("$GITHUB_WORKSPACE/.ci-bin/kujo" --version)" = "kujo ${KUJO_VERSION}"
           "$GITHUB_WORKSPACE/.ci-bin/kujo" run --help >/dev/null
           echo "KUJO_BIN=$GITHUB_WORKSPACE/.ci-bin/kujo" >> "$GITHUB_ENV"
 

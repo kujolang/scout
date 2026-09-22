@@ -14,30 +14,25 @@ The examples in this README are the canonical copyable examples for Scout usage;
 
 ## Install and support
 
-This source version needs the Kujo `read_binary_prefix_beneath` API. Released
-Kujo `1.3.1` and `1.4.0` do not contain it; the first planned compatible
-release is `1.5.0`. Until it is released, build the exact Kujo source commit
-pinned in [Scout's Linux CI](.github/workflows/repo-checks.yml) rather than
-assuming a version number implies API support. Install Rust as described in
-the [Kujo project instructions](https://github.com/kujolang/kujo), then:
+Scout requires Kujo `1.5.0` or newer because it uses the
+`read_binary_prefix_beneath` API. Download the archive for your platform and
+its matching checksum from the official
+[Kujo v1.5.0 release](https://github.com/kujolang/kujo/releases/tag/v1.5.0),
+verify the archive, and place the extracted `kujo` executable on `PATH`. Then:
 
 ```bash
+kujo --version # kujo 1.5.0 or newer
 git clone https://github.com/kujolang/scout.git
 cd scout
-git clone https://github.com/kujolang/kujo.git ../kujo
-kujo_ref="$(awk '/SCOUT_CI_KUJO_REF:/ { print $2 }' .github/workflows/repo-checks.yml)"
-git -C ../kujo fetch --depth 1 origin "$kujo_ref"
-git -C ../kujo checkout --detach FETCH_HEAD
-(cd ../kujo && cargo build --release --locked)
-../kujo/target/release/kujo run scout.kujo -- tests/fixtures/arc001 -o ./results --quick
+kujo run scout.kujo -- tests/fixtures/arc001 -o ./results --quick
 ```
 
 The last command should print a `scan_manifest.json` path in a new run folder
-under `results/`. For later scans, use that binary directly or place it on
-`PATH`; older runtimes exit before scanning with a compatibility message.
-Run `KUJO_BIN=../kujo/target/release/kujo tests/scripts/test_install_smoke.sh`
-for the automated quick-start equivalent; it runs on macOS locally and in the
-pinned Linux CI job. Python 3,
+under `results/`. Older runtimes exit before scanning with a compatibility
+message. Run `KUJO_BIN=/absolute/path/to/kujo tests/scripts/test_install_smoke.sh`
+for the automated quick-start equivalent; it is validated locally against the
+published macOS archive and in Linux CI against the checksum-pinned published
+Linux archive. Python 3,
 `jq`, and a Bash-compatible shell are needed for Scout's test suite, not for
 normal Scout scans. There is no published self-contained Scout executable.
 Scout's full suite is validated on macOS and its fast suite on Linux; Kujo's
@@ -344,9 +339,8 @@ When adding new analyzers or outputs, also add:
 - `python3` with `jsonschema` installed for schema contract validation
 
 Scout regression scripts auto-resolve a compatible Kujo binary and will prefer `KUJO_BIN` when set.
-CI builds the exact post-1.4.0 Kujo source commit pinned in
-`.github/workflows/repo-checks.yml` with its locked dependencies. This source
-pin is required until a release containing `read_binary_prefix_beneath` exists.
+CI downloads the official Kujo `1.5.0` Linux x64 archive and verifies its
+pinned SHA-256 before running any Scout checks.
 
 Run these once before local test loops:
 

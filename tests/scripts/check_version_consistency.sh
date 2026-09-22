@@ -40,7 +40,25 @@ if [[ "$scout_version" != "$version_file" || "$scout_version" != "$kujo_project_
 fi
 
 if [[ "$kujo_minimum" != "1.5.0" || "$kennel_minimum" != "1.5.0" ]]; then
-	echo "Minimum declared Kujo release must support read_binary_prefix_beneath (planned 1.5.0)"
+	echo "Minimum declared Kujo release must support read_binary_prefix_beneath (1.5.0)"
+	exit 1
+fi
+
+ci_kujo_version="$(awk -F ' ' '/^[[:space:]]*KUJO_VERSION:/ {print $2; exit}' .github/workflows/repo-checks.yml)"
+ci_kujo_sha256="$(awk -F ' ' '/^[[:space:]]*KUJO_LINUX_X64_SHA256:/ {print $2; exit}' .github/workflows/repo-checks.yml)"
+
+if [[ "$ci_kujo_version" != "$kujo_minimum" ]]; then
+	echo "CI Kujo release must match the declared minimum: ci=$ci_kujo_version minimum=$kujo_minimum"
+	exit 1
+fi
+
+if [[ ! "$ci_kujo_sha256" =~ ^[0-9a-f]{64}$ ]]; then
+	echo "CI Kujo release SHA-256 must be a lowercase 64-character digest"
+	exit 1
+fi
+
+if grep -q 'SCOUT_CI_KUJO_REF' .github/workflows/repo-checks.yml; then
+	echo "CI must use the published Kujo release archive, not the retired source pin"
 	exit 1
 fi
 
