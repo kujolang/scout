@@ -748,12 +748,10 @@ PROJECT_SLUG := sanitize_slug(PROJECT_NAME)
 RUN_TS := format_date(now(), "YYYYMMDD-HHmmss") + "-" + to_string(current_timestamp())
 OUTPUT := OUTPUT_ROOT + "/" + PROJECT_SLUG + "-" + RUN_TS
 
-OUTPUT_BASE := OUTPUT_ROOT
-OUTPUT_PARTS := split(OUTPUT_ROOT, "/")
-for p2 in OUTPUT_PARTS {
-    if trim(p2) != "" {
-        OUTPUT_BASE := p2
-    }
+OUTPUT_ROOT_ABS := ""
+OUTPUT_BASE := basename_from_path(OUTPUT_ROOT)
+if file_exists(OUTPUT_ROOT) {
+    OUTPUT_ROOT_ABS := path_absolute(OUTPUT_ROOT)
 }
 
 PARSE_ERRORS := []
@@ -775,7 +773,12 @@ while len(LEVEL_DIRS) > 0 {
             items := sort_strings_asc(list_dir(dir_path))
             for item in items {
                 try {
-                    if has_key(IGNORED_DIRS, item) == 0 && !(dir_depth == 0 && starts_with(item, ".")) && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) && !(dir_depth == 0 && item == OUTPUT_BASE) {
+                    # Honor the explicit ignore list, but keep useful hidden project
+                    # directories (for example .github) available to the scanner.
+                    # Exclude generated reports only when the output root is inside
+                    # the target; a same-named directory elsewhere is not output.
+                    output_dir_entry := OUTPUT_ROOT_ABS != "" && item == OUTPUT_BASE && path_absolute(dir_path + "/" + item) == OUTPUT_ROOT_ABS
+                    if has_key(IGNORED_DIRS, item) == 0 && !output_dir_entry && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) {
                         full_path := dir_path + "/" + item
                         if is_path_within_target(full_path, TARGET_ABS) {
                             child_is_dir := path_is_dir(full_path)
