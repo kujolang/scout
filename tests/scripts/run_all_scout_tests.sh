@@ -38,6 +38,7 @@ tests=(
 	tests/scripts/test_bugfix001_regression_matrix.sh
 	tests/scripts/test_hardening.sh
 	tests/scripts/test_hidden_project_dirs.sh
+	tests/scripts/test_bounded_source_reads.sh
 )
 
 if [[ "${SCOUT_SKIP_SLOW:-0}" == "1" ]]; then

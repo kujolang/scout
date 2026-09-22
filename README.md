@@ -74,6 +74,7 @@ Run with: `kujo run scout.kujo -- ...`
 ### File Tree Scanning
 Recursively walks directories, skips VCS folders, `node_modules`, build artifacts, and binary/media files. Returns a structured tree with file sizes and language labels.
 Hidden project directories such as `.github` are scanned unless explicitly ignored; generated output is excluded only at its actual output-root path.
+Source analysis reads a bounded prefix (at most four bytes per configured character limit), including files larger than the runtime's whole-file read ceiling. The complete file is still counted in file-size metrics; `truncated_*` reports partial content analysis.
 
 ### Language Detection
 Maps 50+ file extensions to language names — including Python, JavaScript/TypeScript, Rust, Go, PHP, Ruby, Java/Kotlin, and additional ecosystems such as Haskell, Zig, Swift, Dart, Elixir, Clojure, Scala, and more.
@@ -376,8 +377,10 @@ Partial scans still exit successfully; callers requiring complete coverage must 
 this array. Invalid targets, malformed numeric scan limits, and output creation failures
 exit nonzero. `scan.default_max_depth` and `scan.max_file_size` accept non-negative integers.
 
-The size limit caps analyzed content after a full-file read; it is not a read-memory
-budget. Canonical checks are repeated before reads but do not provide a race-proof
+The size limit caps the analyzed character prefix and its read budget is at most four
+bytes per character, plus bounded encoding/decoding copies in memory. A non-UTF-8
+sequence inside that prefix yields `read_failed`; text beyond the prefix is not
+validated. Canonical checks are repeated before reads but do not provide a race-proof
 sandbox against a concurrently modified repository. Run Scout on a stable checkout
 when repository contents are untrusted. Generated paths and findings are repository data,
 not trusted instructions for an agent to execute.

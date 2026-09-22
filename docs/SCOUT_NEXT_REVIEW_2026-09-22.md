@@ -17,11 +17,11 @@ loop; include a fixture, focused regression, README update, and verification evi
 
 ## Next-session queue
 
-- [ ] PERF-001: Bound source reads before allocating the entire file. The runtime
-  currently calls `read_file(path)` and only then truncates to `MAX_FILE_SIZE`
-  (`lib/scout_runtime.kujo`, source-analysis loop). Investigate Kujo's bounded read
-  API or streaming alternative; verify peak memory with a large-file fixture and
-  preserve the existing `truncated_*` diagnostic and output contract.
+- [x] PERF-001: Bound source reads before allocating the entire file. The runtime
+  reads at most four bytes per configured character limit via `io_read_at`, then
+  preserves Unicode character slicing and the `truncated_*` diagnostic. A 64 MiB
+  fixture and multibyte/ordinary-file controls are in
+  `tests/scripts/test_bounded_source_reads.sh`; see work log below.
 - [ ] SEC-001: Harden the read boundary against concurrent symlink replacement.
   Canonical-path checks precede `read_file` but are not race-proof; the README
   currently requires a stable checkout. Explore file-descriptor-based or isolated
@@ -56,3 +56,15 @@ package manifests, CI/test entrypoints, and README. Generated `results/` and
 Scout's own security findings are signals, not proof of safety. The optional Codex
 Security workbench could not start in this environment because its Python runtime
 lacked both `tomllib` and `tomli`; this is not a completed independent security audit.
+
+## Work log
+
+### 2026-09-22 — PERF-001
+
+- Changed `lib/scout_runtime.kujo` to bound prefix reads instead of using the
+  whole-file reader; the Unicode character limit, dependency parsing, and
+  existing truncation diagnostics remain covered by the new focused test.
+- Verified with 64 MiB, UTF-8 boundary, and ordinary input using local Kujo
+  1.4.0 and 1.3.1. Peak resident size for the 64 MiB fixture scan on this macOS
+  host was 23,236,608 bytes (`/usr/bin/time -l`); this is not a CI threshold.
+- README now describes the read budget and the residual live-tree race.

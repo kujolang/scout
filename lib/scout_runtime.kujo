@@ -958,7 +958,31 @@ for code_file in CODE_FILES {
     try {
         # Recheck after discovery; this reduces, but cannot eliminate, rename races.
         if is_path_within_target(path, TARGET_ABS) {
-            content := read_file(path)
+            # The Kujo text reader loads the entire file and has a runtime
+            # ceiling. Read only the analysis prefix through bounded I/O.
+            # Decode with the same strict UTF-8 behavior as read_file.
+            # len(string) counts Unicode characters. Four bytes per character
+            # bounds the read while preserving the old character-prefix limit.
+            max_read_bytes := MAX_FILE_SIZE * 4
+            prefix_bytes := io_read_at(path, 0, max_read_bytes)
+            decoded := false
+            trim_bytes := 0
+            while trim_bytes < 4 && !decoded {
+                try {
+                    if trim_bytes > 0 {
+                        prefix_bytes := io_read_at(path, 0, max_read_bytes - trim_bytes)
+                    }
+                    content := decode_base64_utf8(encode_base64(prefix_bytes))
+                    decoded := true
+                } except err {
+                    trim_bytes := trim_bytes + 1
+                }
+            }
+            if !decoded {
+                # An invalid UTF-8 sequence within the prefix still fails,
+                # as it did with read_file; only a cut final character heals.
+                content := decode_base64_utf8(encode_base64(prefix_bytes))
+            }
             read_ok := true
         }
     } except err {
@@ -970,7 +994,7 @@ for code_file in CODE_FILES {
     }
 
     if read_ok {
-        if len(content) > MAX_FILE_SIZE {
+        if size > MAX_FILE_SIZE * 4 || len(content) > MAX_FILE_SIZE {
             content := substring(content, 0, MAX_FILE_SIZE)
             truncated := true
         }
