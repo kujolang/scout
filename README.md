@@ -6,6 +6,8 @@
 
 Scout is a codebase intelligence tool built in [Kujo](https://github.com/kujolang/kujo) — it turns a local repository into an agent-readable context pack by mapping structure, dependencies, routes, and risk into structured outputs.
 
+Scout is a useful starting point, not an enterprise security certification or a complete static analyzer. It uses lightweight, heuristic parsing; review findings and scan diagnostics before relying on the output for CI gates or security decisions.
+
 It helps agents and humans start from the same map of a codebase: file tree, language breakdown, dependency graph, route/API discovery, security smell detection, review checklist, and reviewable context files. Scout packages repository state; it does not replace human review or guarantee perfect understanding.
 
 The examples in this README are the canonical copyable examples for Scout usage; tests and fixture snapshots are regression contracts, not style models.
@@ -71,6 +73,7 @@ Run with: `kujo run scout.kujo -- ...`
 
 ### File Tree Scanning
 Recursively walks directories, skips VCS folders, `node_modules`, build artifacts, and binary/media files. Returns a structured tree with file sizes and language labels.
+Hidden project directories such as `.github` are scanned unless explicitly ignored; generated output is excluded only at its actual output-root path.
 
 ### Language Detection
 Maps 50+ file extensions to language names — including Python, JavaScript/TypeScript, Rust, Go, PHP, Ruby, Java/Kotlin, and additional ecosystems such as Haskell, Zig, Swift, Dart, Elixir, Clojure, Scala, and more.
@@ -204,6 +207,7 @@ scout/
 ```
 
 Runtime entrypoint remains `scout.kujo`.
+This repository uses `lib/` for its source modules, not `src/`. The small root entrypoint is intentional: published Kujo/Kennel manifests and copyable commands point to it. Root `config.json` and package/version metadata are also active inputs, not duplicate source files.
 
 ### File Responsibilities
 
@@ -391,3 +395,4 @@ or baseline and consume artifacts only after a successful scan receipt.
 
 The hardening audit and reproducible benchmark command are in
 [`docs/audits/repository-hardening.md`](docs/audits/repository-hardening.md).
+The [September 2026 follow-up review](docs/SCOUT_NEXT_REVIEW_2026-09-22.md) records prioritized work still needed before making stronger production-readiness claims.

@@ -3,6 +3,8 @@
 This active checklist was restored during the 2026-09-07 hardening pass because
 README and contributor instructions referenced a file removed by an earlier cleanup.
 It records current work; it does not reconstruct historical checklist entries.
+For the next prioritized implementation queue, see
+[`SCOUT_NEXT_REVIEW_2026-09-22.md`](SCOUT_NEXT_REVIEW_2026-09-22.md).
 
 - [x] HARD-001: Exact path boundaries, cross-rule redaction, scan diagnostics, numeric validation, and JSON fallback correctness; add behavioral regression coverage.
 - [x] HARD-002: Stable merge sorting and removal of unnecessary report/finding retention; preserve output contracts and measure representative scans.
@@ -49,3 +51,12 @@ It records current work; it does not reconstruct historical checklist entries.
   optional recognized declaration; arbitrary unquoted multiword prefixes are redacted.
 - Expanded the security fixture to six retained findings and reran all 25 scripts on
   the available release Kujo 1.3.1 binary. No golden snapshots changed.
+
+### 2026-09-22 — repository follow-up review
+
+- Preserved the published root entrypoint and active configuration/manifests;
+  source modules remain in `lib/`, as there is no `src/` directory.
+- Corrected hidden project directory discovery and exact output-root exclusion,
+  with a focused regression script and fixture.
+- Clarified readiness limits in the README and added the next-session queue in
+  `docs/SCOUT_NEXT_REVIEW_2026-09-22.md`.
