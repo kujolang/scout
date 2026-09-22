@@ -8,6 +8,11 @@ Scout version values must stay aligned across:
 
 - scout.kujo (`VERSION := "x.y.z"`)
 - config.json (`tool.version`)
+- VERSION, kujo.toml, and kennel.toml (package `version`)
+
+The minimum runtime version in both manifests must match the CI-pinned tested
+Kujo 1.3.1. Update the pin, both minimum versions, and runtime compatibility
+tests together before changing the support floor.
 
 CI enforces this via `tests/scripts/check_version_consistency.sh`.
 
@@ -30,9 +35,8 @@ When preparing a release:
 ## Release Checklist
 
 1. Ensure `main` is green.
-2. Update version values in:
-   - scout.kujo
-   - config.json
+2. Update version values in `scout.kujo`, `config.json`, `VERSION`,
+   `kujo.toml`, and `kennel.toml`.
 3. Update `CHANGELOG.md`:
    - Promote unreleased entries into a dated release section.
 4. Run local validation:

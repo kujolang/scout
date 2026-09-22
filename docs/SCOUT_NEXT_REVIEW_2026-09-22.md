@@ -55,9 +55,11 @@ loop; include a fixture, focused regression, README update, and verification evi
   peak memory, report bytes, fixture digests, and verified route/dependency
   counts; use measured hotspots to prioritize future optimizations. The fast
   benchmark contract runs in the aggregate suite without timing thresholds.
-- [ ] DOC-001: Publish supported Kujo version range and reproducible installation
-  instructions with CI parity. Keep `VERSION`, `config.json`, manifests, and release
-  notes aligned; add tested macOS/Linux examples and state platform coverage honestly.
+- [x] DOC-001: Publish tested Kujo runtime points and reproducible installation
+  instructions with CI parity. Align `VERSION`, `config.json`, project/package
+  manifests, changelog, and release guidance; add a shared macOS/Linux
+  quick-start smoke. Linux validation is through the pinned hosted CI job,
+  not a claim of a local Linux execution.
 
 ## Verification and scope
 
@@ -130,3 +132,14 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   Investigate per-record array construction and report assembly before indexing;
   any algorithm change needs profile-backed before/after measurements and output
   equivalence tests. No broad speedup claim is made from one host/run.
+
+### 2026-09-22 — DOC-001
+
+- Updated `kennel.toml` and `kujo.toml` minimum Kujo versions to 1.3.1, expanded
+  `tests/scripts/check_version_consistency.sh` to compare all five active
+  version sources, and recorded the current unreleased changes in CHANGELOG.
+- Added README installation/support instructions and shared
+  `tests/scripts/test_install_smoke.sh` on macOS and in Linux CI; updated
+  `.github/workflows/repo-checks.yml` and `docs/RELEASE_PROCESS.md`.
+- Local Kujo 1.3.1 and 1.4.0 smoke checks passed on macOS. Linux execution
+  remains a hosted CI verification step and is not inferred from local results.

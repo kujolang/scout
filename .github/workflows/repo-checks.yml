@@ -71,6 +71,11 @@ jobs:
           set -euo pipefail
           tests/scripts/check_version_consistency.sh
 
+      - name: Verify documented quick-start on Linux
+        run: |
+          set -euo pipefail
+          tests/scripts/test_install_smoke.sh
+
       - name: Fixture smoke scan
         run: |
           set -euo pipefail

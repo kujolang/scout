@@ -6,6 +6,10 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 
 ## [Unreleased]
 
+### Added
+- Add opt-in strict partial-scan exits, literal Fastify object-route discovery,
+  bounded source reads, and deterministic large-scan benchmark coverage.
+
 ### Fixed
 - Enforce exact canonical path boundaries, retain whitespace in source paths, skip special files, and diagnose unavailable entries without dropping siblings.
 - Redact sensitive lines consistently across security rules and suppress unsafe source prefixes in exports and fingerprints.
@@ -20,6 +24,9 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 - Fixed numeric line ordering for security findings.
 
 ### Changed
+- Publish reports via staging and unique run directories; atomically replace
+  accepted baselines after a complete report, and declare Kujo 1.3.1 minimum.
+- Scan useful hidden project directories and document production-readiness limits.
 - Sort entries deterministically and use stable merge sorting with precomputed dependency and route keys.
 - Avoid generating full-only documents in minimal mode or retaining all finding records when baseline writing is disabled.
 - Add hardening regression checks to the aggregate suite and document partial-scan diagnostics.

@@ -12,6 +12,27 @@ It helps agents and humans start from the same map of a codebase: file tree, lan
 
 The examples in this README are the canonical copyable examples for Scout usage; tests and fixture snapshots are regression contracts, not style models.
 
+## Install and support
+
+Scout needs Kujo `1.3.1` or newer on `PATH` (or a known absolute `KUJO_BIN` for
+tests). Its tested runtime points are `1.3.1` (the immutable Linux CI pin) and
+`1.4.0` (local macOS validation); this is not a promise about every later
+release or every platform. Install Kujo using the
+[Kujo project instructions](https://github.com/kujolang/kujo), then clone Scout:
+
+```bash
+git clone https://github.com/kujolang/scout.git
+cd scout
+kujo --version
+kujo run scout.kujo -- tests/fixtures/arc001 -o ./results --quick
+```
+
+The last command should print a `scan_manifest.json` path in a new run folder
+under `results/`. Run `tests/scripts/test_install_smoke.sh` for the automated
+equivalent; it runs on macOS locally and in the pinned Linux CI job. Python 3,
+`jq`, and a Bash-compatible shell are needed for Scout's test suite, not for
+normal Scout scans. There is no published self-contained Scout executable.
+
 ## Quick Start
 
 ```bash

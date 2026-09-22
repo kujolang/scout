@@ -13,10 +13,10 @@ readme = "README.md"
 stage = "production"
 stability = "stable"
 public_api = true
-notes = "Stable local and CI repository-intelligence surface. Scout surfaces review signals and does not replace human review."
+notes = "Stable local repository-intelligence CLI; security signals require review and this stage is not enterprise certification."
 
 [kujo]
-minimum_version = "0.1.0"
+minimum_version = "1.3.1"
 entry = "scout.kujo"
 sources = ["lib", "."]
 includes = ["README.md", "docs", "tests", "examples", "config.json"]

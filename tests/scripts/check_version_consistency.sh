@@ -13,6 +13,11 @@ fi
 
 scout_version="$(grep -E '^VERSION := "' scout.kujo | head -n 1 | cut -d '"' -f 2)"
 config_version="$(jq -r '.tool.version' config.json)"
+version_file="$(tr -d '\n' < VERSION)"
+kujo_project_version="$(awk -F '"' '/^version = "/ {print $2; exit}' kujo.toml)"
+kennel_project_version="$(awk -F '"' '/^version = "/ {print $2; exit}' kennel.toml)"
+kujo_minimum="$(awk -F '"' '/^minimum_version = "/ {print $2; exit}' kujo.toml)"
+kennel_minimum="$(awk -F '"' '/^minimum_version = "/ {print $2; exit}' kennel.toml)"
 
 if [[ -z "$scout_version" ]]; then
 	echo "Unable to parse VERSION from scout.kujo"
@@ -26,6 +31,16 @@ fi
 
 if [[ "$scout_version" != "$config_version" ]]; then
 	echo "Version mismatch: scout.kujo=$scout_version config.json=$config_version"
+	exit 1
+fi
+
+if [[ "$scout_version" != "$version_file" || "$scout_version" != "$kujo_project_version" || "$scout_version" != "$kennel_project_version" ]]; then
+	echo "Version mismatch among scout.kujo, config.json, VERSION, kujo.toml, and kennel.toml"
+	exit 1
+fi
+
+if [[ "$kujo_minimum" != "1.3.1" || "$kennel_minimum" != "1.3.1" ]]; then
+	echo "Minimum Kujo version must match the pinned tested CI runtime (1.3.1)"
 	exit 1
 fi
 
