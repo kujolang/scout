@@ -1,6 +1,6 @@
 # Scout v1.0.0 (Kujo-native)
 
-from lib.path_filters import basename_from_path, sanitize_slug, normalize_filter_text, pattern_match, any_pattern_match, is_path_within_target, relative_path_from_target, format_output_path
+from lib.path_filters import basename_from_path, sanitize_slug, normalize_filter_text, pattern_match, any_pattern_match, is_canonical_path_within_target, relative_canonical_path_from_target
 from lib.sorting import sort_strings_asc, sort_dependencies, sort_routes, sort_security_findings
 from lib.security_exports import build_sarif_security_export, build_jsonl_security_export, redact_security_snippet, build_security_fingerprint
 from lib.text_scan import find_after, first_quoted_value, is_escaped_char, is_inside_quoted_literal, contains_unquoted_call
@@ -820,16 +820,20 @@ CODE_FILES := []
 TOTAL_FILES_SEEN := 0
 TOTAL_DIRS_SEEN := 0
 
-LEVEL_DIRS := [{"path": TARGET, "depth": 0, "ancestors": [TARGET_ABS]}]
+root_out_path := "."
+if PATH_MODE == "absolute" {
+    root_out_path := TARGET_ABS
+}
+LEVEL_DIRS := [{"path": TARGET, "depth": 0, "ancestors": [TARGET_ABS], "out_path": root_out_path}]
 while len(LEVEL_DIRS) > 0 {
     NEXT_LEVEL := []
 
     for dir_node in LEVEL_DIRS {
         dir_path := dir_node["path"]
         dir_depth := dir_node["depth"]
+        dir_out_path := dir_node["out_path"]
 
         try {
-            dir_out_path := format_output_path(dir_path, TARGET_ABS, PATH_MODE)
             items := sort_strings_asc(list_dir(dir_path))
             for item in items {
                 try {
@@ -837,12 +841,17 @@ while len(LEVEL_DIRS) > 0 {
                     # directories (for example .github) available to the scanner.
                     # Exclude generated reports only when the output root is inside
                     # the target; a same-named directory elsewhere is not output.
-                    output_dir_entry := OUTPUT_ROOT_ABS != "" && item == OUTPUT_BASE && path_absolute(dir_path + "/" + item) == OUTPUT_ROOT_ABS
-                    if has_key(IGNORED_DIRS, item) == 0 && !output_dir_entry && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) {
+                    if has_key(IGNORED_DIRS, item) == 0 && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) {
                         full_path := dir_path + "/" + item
-                        if is_path_within_target(full_path, TARGET_ABS) {
+                        child_abs := path_absolute(full_path)
+                        output_dir_entry := OUTPUT_ROOT_ABS != "" && item == OUTPUT_BASE && child_abs == OUTPUT_ROOT_ABS
+                        if !output_dir_entry && is_canonical_path_within_target(child_abs, TARGET_ABS) {
                             child_is_dir := path_is_dir(full_path)
-                            rel_path := relative_path_from_target(full_path, TARGET_ABS)
+                            rel_path := relative_canonical_path_from_target(child_abs, TARGET_ABS)
+                            child_out_path := rel_path
+                            if PATH_MODE == "absolute" {
+                                child_out_path := child_abs
+                            }
 
                             excluded := false
                             if len(EXCLUDE_PATTERNS) > 0 {
@@ -880,7 +889,6 @@ while len(LEVEL_DIRS) > 0 {
                                 if child_is_dir {
                                     TOTAL_DIRS_SEEN := TOTAL_DIRS_SEEN + 1
                                     TREE_LINES := push(TREE_LINES, indent + "- [D] " + item)
-                                    child_abs := path_absolute(full_path)
                                     directory_cycle := false
                                     for ancestor in dir_node["ancestors"] {
                                         if child_abs == ancestor {
@@ -888,10 +896,10 @@ while len(LEVEL_DIRS) > 0 {
                                         }
                                     }
                                     if directory_cycle {
-                                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": format_output_path(full_path, TARGET_ABS, PATH_MODE), "error": "directory_cycle"})
+                                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": child_out_path, "error": "directory_cycle"})
                                     }
                                     if !directory_cycle && dir_depth < MAX_DEPTH {
-                                        NEXT_LEVEL := push(NEXT_LEVEL, {"path": full_path, "depth": dir_depth + 1, "ancestors": push(dir_node["ancestors"], child_abs)})
+                                        NEXT_LEVEL := push(NEXT_LEVEL, {"path": full_path, "depth": dir_depth + 1, "ancestors": push(dir_node["ancestors"], child_abs), "out_path": child_out_path})
                                     }
                                 }
 
@@ -946,7 +954,7 @@ while len(LEVEL_DIRS) > 0 {
                                     if include_as_code {
                                         CODE_FILES := push(CODE_FILES, {
                                             "path": full_path,
-                                            "out_path": format_output_path(full_path, TARGET_ABS, PATH_MODE),
+                                            "out_path": child_out_path,
                                             "relative_source_path": rel_path,
                                             "name": item,
                                             "lang": lang,
@@ -966,15 +974,7 @@ while len(LEVEL_DIRS) > 0 {
                 }
             }
         } except err {
-            error_dir_path := dir_path
-            try {
-                error_dir_path := format_output_path(dir_path, TARGET_ABS, PATH_MODE)
-            } except path_err {
-                # The directory may have vanished between list_dir and this
-                # diagnostic; keep reporting rather than failing the scan.
-                error_dir_path := dir_path
-            }
-            PARSE_ERRORS := push(PARSE_ERRORS, {"file": error_dir_path, "error": "directory_read_failed"})
+            PARSE_ERRORS := push(PARSE_ERRORS, {"file": dir_out_path, "error": "directory_read_failed"})
         }
     }
 

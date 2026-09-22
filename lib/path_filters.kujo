@@ -165,6 +165,41 @@ func is_path_within_target(full_path, target_abs) {
     return true
 }
 
+# Inputs have already been canonicalized at discovery. Do not resolve them
+# again: a live repository can remove the entry between the two calls.
+func is_canonical_path_within_target(full_abs, target_abs) {
+    separator := "/"
+    if index_of(target_abs, "\\") >= 0 {
+        separator := "\\"
+    }
+    if target_abs == separator {
+        return starts_with(full_abs, separator)
+    }
+    if full_abs == target_abs {
+        return true
+    }
+    boundary := target_abs
+    if !ends_with(boundary, separator) {
+        boundary := boundary + separator
+    }
+    return starts_with(full_abs, boundary)
+}
+
+func relative_canonical_path_from_target(full_abs, target_abs) {
+    if full_abs == target_abs {
+        return "."
+    }
+    separator := "/"
+    if index_of(target_abs, "\\") >= 0 {
+        separator := "\\"
+    }
+    start := len(target_abs)
+    if !ends_with(target_abs, separator) {
+        start := start + 1
+    }
+    return join(split(substring(full_abs, start, len(full_abs)), "\\"), "/")
+}
+
 func relative_path_from_target(full_path, target_abs) {
     full_abs := path_absolute(full_path)
     canonical_target := path_absolute(target_abs)
@@ -216,5 +251,7 @@ export pattern_match := pattern_match
 export any_pattern_match := any_pattern_match
 export path_components := path_components
 export is_path_within_target := is_path_within_target
+export is_canonical_path_within_target := is_canonical_path_within_target
+export relative_canonical_path_from_target := relative_canonical_path_from_target
 export relative_path_from_target := relative_path_from_target
 export format_output_path := format_output_path
