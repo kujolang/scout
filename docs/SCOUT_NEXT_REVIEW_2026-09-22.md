@@ -157,6 +157,8 @@ lacked both `tomllib` and `tomli`; this is not a completed independent security 
   and the focused alias/race/large-limit regression script.
 - Verified the Kujo rooted unit tests, VM/interpreter capability parity,
   `cargo fmt --check`, `cargo check --locked`, and Scout's complete local test
-  suite on the new source-built runtime. The new Linux CI pin requires its own
-  hosted run; until Kujo publishes a compatible release, clone the pinned
-  source commit as documented in README.
+  suite on the new source-built runtime. CI now pins Kujo
+  `7f4a288587710003c60869c016c8f4d97ca3b8af` after updating generated
+  inventories and preserving the executable-unsafe budget. Until Kujo
+  publishes a compatible release, clone the pinned source commit as documented
+  in README.

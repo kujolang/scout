@@ -40,6 +40,9 @@ for the automated quick-start equivalent; it runs on macOS locally and in the
 pinned Linux CI job. Python 3,
 `jq`, and a Bash-compatible shell are needed for Scout's test suite, not for
 normal Scout scans. There is no published self-contained Scout executable.
+Scout's full suite is validated on macOS and its fast suite on Linux; Kujo's
+rooted reader has separate Windows conformance checks, but Scout's full Windows
+CLI workflow has not been verified.
 
 ## Quick Start
 
