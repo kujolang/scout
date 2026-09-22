@@ -33,6 +33,7 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 - Install the official checksum-pinned Kujo 1.5.0 Linux and Windows binaries in
   CI, verify a native Windows Scout artifact workflow, and document the
   published runtime installation path instead of requiring a source build.
+- Update the immutable checkout action pin to its Node.js 24 release.
 - Scan useful hidden project directories and document production-readiness limits.
 - Sort entries deterministically and use stable merge sorting with precomputed dependency and route keys.
 - Avoid generating full-only documents in minimal mode or retaining all finding records when baseline writing is disabled.
