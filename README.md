@@ -87,7 +87,7 @@ Run with: `kujo run scout.kujo -- ...`
 | `FILE_TREE.md` | Recursive directory tree showing files, sizes, and detected languages |
 | `README.md` | Full report with metrics, routes, dependencies, and security findings |
 | `llms.txt` | Compact project overview for context injection into downstream tools |
-| `AGENTS.md` | Structured context for AI coding assistants |
+| `AGENTS.md` | Fixed guidance and aggregate counts for AI coding assistants; repository-derived detail stays in JSON |
 | `CHECKLIST.md` | Code review checklist with security findings highlighted |
 | `intelligence.json` | Full structured data dump for programmatic consumption |
 | `scan_manifest.json` | Run manifest with schema version, metadata, and artifact pointers |
@@ -165,7 +165,7 @@ Generates standard output files plus optional security exports:
 | `-d, --max-depth N` | Max directory depth | `6` |
 | `--skip-security` | Skip security smell scan | — |
 | `--security-export F` | Emit security findings as `sarif` or `jsonl` (repeatable) | disabled |
-| `--baseline PATH` | Baseline file used to suppress known findings | `scout-baseline.json` |
+| `--baseline PATH` | Baseline file relative to target, or an explicit operator-selected absolute file | `scout-baseline.json` |
 | `--show-suppressed` | Include suppressed findings in generated outputs | disabled |
 | `--write-baseline` | Write the current finding fingerprints to the baseline file | disabled |
 | `--kennel-index` | Emit a Kennel Stage 2 compatible `index.json` artifact | disabled |
@@ -174,7 +174,7 @@ Generates standard output files plus optional security exports:
 | `--skip-deps` | Skip dependency analysis | — |
 | `--include PATTERN` | Include only files matching glob (repeatable) | none |
 | `--exclude PATTERN` | Exclude files/directories matching glob (repeatable) | none |
-| `--ignore-file PATH` | Ignore file path relative to target | `.scoutignore` |
+| `--ignore-file PATH` | Ignore file relative to target, or an explicit operator-selected absolute file | `.scoutignore` |
 | `--path-mode MODE` | Path style for outputs (`relative`\|`absolute`) | `relative` |
 | `--output-profile P` | Output profile: `full` or `minimal` | `full` |
 | `--quick` | Shortcut for `--output-profile minimal` | disabled |
@@ -206,7 +206,7 @@ Scout reads defaults from `config.json` and resolves runtime behavior with this 
 
 Key config sections:
 
-- `scan`: default depth, max file size, ignored directories, include/exclude defaults
+- `scan`: default depth, per-file size, aggregate entry/code-file/analyzed-byte/result/ignore-rule ceilings, ignored directories, and include/exclude defaults
 - `output`: default output directory, path mode, optional Kennel output toggles, optional security export defaults
 - `analysis`: enable/disable dependency/route/security analyzers, metrics collection, baseline visibility, `strict_scan` (default `false`), and `optional_rules` (default `[]`)
 
@@ -280,17 +280,29 @@ Run a fast path for local iteration (skips slow ARC-002 root scan):
 SCOUT_SKIP_SLOW=1 tests/scripts/run_all_scout_tests.sh
 ```
 
-For observational large-repository profiling (not a CI latency gate):
+For the versioned large-repository performance gate:
 
 ```bash
-python3 tests/scripts/benchmark_large_scans.py --kujo /path/to/kujo --output tests/tmp/large-benchmark.json
+python3 tests/scripts/benchmark_large_scans.py --kujo /path/to/kujo \
+  --targets tests/performance_targets.json \
+  --output tests/tmp/large-benchmark.json
 ```
 
 The script generates deterministic temporary many-file, route-heavy, and large-source
-workloads, validates their output counts, and records wall time, child CPU, peak
-resident memory, and report bytes. See the checked-in
-[measurement receipt](docs/audits/artifacts/large-scan-benchmark.json) for one host;
-do not treat those numbers as portable service-level guarantees.
+workloads, validates their output counts, records wall time, child CPU, peak
+resident memory, and report bytes, and enforces portable regression ceilings.
+See the checked-in [measurement receipt](docs/audits/artifacts/large-scan-benchmark.json)
+for one host. The ceilings are release regression gates, not latency SLAs.
+
+The labeled analysis corpus has its own exact-match precision/recall gate:
+
+```bash
+tests/scripts/test_analysis_coverage_targets.sh
+```
+
+Its versioned targets are in `tests/analysis_targets.json`; the checked-in receipt
+is `docs/audits/artifacts/analysis-coverage.json`. These figures describe only the
+committed literal-route and security fixtures, not arbitrary programs.
 
 Run focused suites:
 
@@ -430,6 +442,9 @@ report and exits 2 after displaying the diagnostic count; `--write-baseline` lea
 the previous baseline untouched. A complete strict scan exits 0. Invalid targets,
 malformed numeric scan limits, and output creation failures
 exit nonzero. `scan.default_max_depth` and `scan.max_file_size` accept non-negative integers.
+The positive aggregate ceilings are `scan.max_entries`, `scan.max_code_files`,
+`scan.max_total_analyzed_bytes`, `scan.max_analysis_results`, and
+`scan.max_ignore_rules`. Exceeding one fails closed before publication.
 
 The size limit caps the analyzed character prefix and its read budget is at most four
 bytes per character, plus bounded encoding/decoding copies in memory. A non-UTF-8
@@ -441,8 +456,15 @@ disappearing path becomes a scan diagnostic. The target root path itself must
 remain stable while scanning: an actor able to replace its parent/root before
 the handle opens is outside this guarantee. The scanner is not a filesystem
 snapshot: file contents and metadata can still change while scanning.
-Generated paths and findings are repository data,
-not trusted instructions for an agent to execute.
+Generated paths and findings are repository data, not trusted instructions for an
+agent to execute. Markdown outputs single-line-normalize and encode repository-derived
+display values. `AGENTS.md` deliberately omits raw routes and paths; exact values remain
+available in JSON.
+
+Default and relative baseline/ignore paths must remain beneath the canonical target.
+Explicit absolute paths remain supported as operator-selected inputs. Scout reads both
+forms through Kujo's rooted, bounded regular-file primitive. Baselines are limited to
+4 MiB; ignore files are limited to 256 KiB and the configured rule ceiling.
 
 All findings on a credential, token, or private-key line share a redacted snippet.
 Simple assignment prefixes remain available; complex prefixes are removed. Existing
@@ -462,4 +484,5 @@ writers and consume reports only from published directories with a manifest.
 
 The hardening audit and reproducible benchmark command are in
 [`docs/audits/repository-hardening.md`](docs/audits/repository-hardening.md).
-The [September 2026 follow-up review](docs/SCOUT_NEXT_REVIEW_2026-09-22.md) records prioritized work still needed before making stronger production-readiness claims.
+The [September 25 enterprise review](docs/SCOUT_NEXT_REVIEW_2026-09-25.md) records
+the completed blocker work and the next evidence-expansion queue.

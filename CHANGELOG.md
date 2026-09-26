@@ -9,8 +9,17 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 ### Added
 - Add opt-in strict partial-scan exits, literal Fastify object-route discovery,
   bounded source reads, and deterministic large-scan benchmark coverage.
+- Add versioned performance regression ceilings, labeled route/security
+  precision-recall targets, and checked-in verification receipts.
+- Add configurable aggregate ceilings for traversal, selected files, analyzed
+  bytes, analysis results, and ignore rules.
 
 ### Fixed
+- Root and bound target-relative baseline and ignore-file reads, reject paths
+  outside the target, and fail closed on oversized metadata.
+- Neutralize repository-controlled Markdown structure and keep raw route/path
+  data out of generated `AGENTS.md`.
+- Hash-lock the Linux CI schema-validation dependency graph on a pinned runner ABI.
 - Confine bounded source reads to a rooted handle under the target even when
   symlinks are swapped during discovery or analysis; tolerate disappearing
   paths in reports and preserve in-root alias handling.

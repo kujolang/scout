@@ -2,9 +2,9 @@
 
 Scout is a strong Kujo example and passes a broad local regression suite, but neither
 universal usefulness nor enterprise-grade security can be established from that alone.
-The items below are source-backed starting points for the next session, not claims of
-exploitable vulnerabilities. Work top-to-bottom, one item per focused implementation
-loop; include a fixture, focused regression, README update, and verification evidence.
+This review is superseded by
+[`SCOUT_NEXT_REVIEW_2026-09-25.md`](SCOUT_NEXT_REVIEW_2026-09-25.md). The items below
+remain the historical work log for the Kujo 1.5 adoption.
 
 ## Completed in this review
 
@@ -70,9 +70,9 @@ loop; include a fixture, focused regression, README update, and verification evi
 Repository review inspected the root entrypoint, all runtime helper modules, config,
 package manifests, CI/test entrypoints, and README. Generated `results/` and
 `tests/tmp/` were excluded from review; fixture snapshots are regression contracts.
-Scout's own security findings are signals, not proof of safety. The optional Codex
-Security workbench could not start in this environment because its Python runtime
-lacked both `tomllib` and `tomli`; this is not a completed independent security audit.
+Scout's own security findings are signals, not proof of safety. A later Codex Security
+workbench run completed successfully under plugin 0.1.31 and Python 3.10.5; its four
+validated findings were remediated in the September 25 enterprise review.
 
 ## Work log
 
