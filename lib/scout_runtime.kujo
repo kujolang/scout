@@ -276,6 +276,12 @@ func error_exit(message) {
     exit(1)
 }
 
+# Stable identifiers let CI classify fail-closed resource limits without
+# parsing human prose. The prose remains for operators and compatibility.
+func limit_error(identifier, message) {
+    error_exit("[" + identifier + "] " + message)
+}
+
 func missing_option_value(option) {
     error_exit("missing value for " + option)
 }
@@ -864,7 +870,7 @@ if !SKIP_SEC && BASELINE_PATH != "" && file_exists(BASELINE_PATH) {
     try {
         baseline_text := decode_utf8_prefix_beneath(BASELINE_READ_ROOT, BASELINE_READ_REL, 4194305)
         if len(baseline_text) > 4194304 {
-            error_exit("baseline file exceeds 4194304 bytes")
+            limit_error("SCOUT-LIMIT-BASELINE-BYTES", "baseline file exceeds 4194304 bytes")
         }
         baseline_doc := parse_json(baseline_text)
         if has_key(baseline_doc, "fingerprints") && type(baseline_doc["fingerprints"]) == "array" {
@@ -907,14 +913,14 @@ if IGNORE_FILE != "" {
         try {
             ignore_text := decode_utf8_prefix_beneath(IGNORE_READ_ROOT, IGNORE_READ_REL, 262145)
             if len(ignore_text) > 262144 {
-                error_exit("ignore file exceeds 262144 bytes")
+                limit_error("SCOUT-LIMIT-IGNORE-BYTES", "ignore file exceeds 262144 bytes")
             }
             ignore_lines := split(ignore_text, "\n")
             for ignore_line in ignore_lines {
                 ignore_rule := trim(ignore_line)
                 if ignore_rule != "" && !starts_with(ignore_rule, "#") {
                     if len(EXCLUDE_PATTERNS) >= MAX_IGNORE_RULES {
-                        error_exit("ignore rule limit exceeded: " + to_string(MAX_IGNORE_RULES))
+                        limit_error("SCOUT-LIMIT-IGNORE-RULES", "ignore rule limit exceeded: " + to_string(MAX_IGNORE_RULES))
                     }
                     EXCLUDE_PATTERNS := push(EXCLUDE_PATTERNS, ignore_rule)
                 }
@@ -981,7 +987,7 @@ while len(LEVEL_DIRS) > 0 {
                         output_dir_entry := OUTPUT_ROOT_ABS != "" && item == OUTPUT_BASE && child_abs == OUTPUT_ROOT_ABS
                         if !output_dir_entry && is_canonical_path_within_target(child_abs, TARGET_ABS) {
                             if TOTAL_FILES_SEEN + TOTAL_DIRS_SEEN >= MAX_ENTRIES {
-                                error_exit("scan entry limit exceeded: " + to_string(MAX_ENTRIES))
+                                limit_error("SCOUT-LIMIT-ENTRIES", "scan entry limit exceeded: " + to_string(MAX_ENTRIES))
                             }
                             child_is_dir := path_is_dir(full_path)
                             rel_path := relative_canonical_path_from_target(child_abs, TARGET_ABS)
@@ -1090,7 +1096,7 @@ while len(LEVEL_DIRS) > 0 {
 
                                     if include_as_code {
                                         if len(CODE_FILES) >= MAX_CODE_FILES {
-                                            error_exit("code file limit exceeded: " + to_string(MAX_CODE_FILES))
+                                            limit_error("SCOUT-LIMIT-CODE-FILES", "code file limit exceeded: " + to_string(MAX_CODE_FILES))
                                         }
                                         CODE_FILES := push(CODE_FILES, {
                                             "path": full_path,
@@ -1155,7 +1161,7 @@ for code_file in CODE_FILES {
         analyzed_file_bytes := MAX_FILE_SIZE * 4
     }
     if ANALYZED_BYTES + analyzed_file_bytes > MAX_TOTAL_ANALYZED_BYTES {
-        error_exit("total analyzed byte limit exceeded: " + to_string(MAX_TOTAL_ANALYZED_BYTES))
+        limit_error("SCOUT-LIMIT-ANALYZED-BYTES", "total analyzed byte limit exceeded: " + to_string(MAX_TOTAL_ANALYZED_BYTES))
     }
     ANALYZED_BYTES := ANALYZED_BYTES + analyzed_file_bytes
 
@@ -1784,13 +1790,13 @@ for code_file in CODE_FILES {
         for line in lines {
             line_num := line_num + 1
             if len(DEPENDENCIES) >= MAX_ANALYSIS_RESULTS {
-                error_exit("dependency result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+                limit_error("SCOUT-LIMIT-DEPENDENCIES", "dependency result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
             }
             if len(ROUTES) >= MAX_ANALYSIS_RESULTS {
-                error_exit("route result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+                limit_error("SCOUT-LIMIT-ROUTES", "route result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
             }
             if SECURITY_FINDINGS_TOTAL >= MAX_ANALYSIS_RESULTS {
-                error_exit("security finding limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+                limit_error("SCOUT-LIMIT-SECURITY-FINDINGS", "security finding limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
             }
             trimmed := trim(line)
 
@@ -2559,7 +2565,7 @@ for code_file in CODE_FILES {
                     # Never expose a sensitive line through a second, non-secret rule.
                     for s_pattern in matched_patterns {
                         if SECURITY_FINDINGS_TOTAL >= MAX_ANALYSIS_RESULTS {
-                            error_exit("security finding limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+                            limit_error("SCOUT-LIMIT-SECURITY-FINDINGS", "security finding limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
                         }
                         finding_snippet := safe_line_snippet
                         finding_entry := {
@@ -2597,13 +2603,13 @@ for code_file in CODE_FILES {
     }
 
     if len(DEPENDENCIES) > MAX_ANALYSIS_RESULTS {
-        error_exit("dependency result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+        limit_error("SCOUT-LIMIT-DEPENDENCIES", "dependency result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
     }
     if len(ROUTES) > MAX_ANALYSIS_RESULTS {
-        error_exit("route result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+        limit_error("SCOUT-LIMIT-ROUTES", "route result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
     }
     if SECURITY_FINDINGS_TOTAL > MAX_ANALYSIS_RESULTS {
-        error_exit("security finding limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
+        limit_error("SCOUT-LIMIT-SECURITY-FINDINGS", "security finding limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
     }
 }
 

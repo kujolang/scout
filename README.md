@@ -103,6 +103,13 @@ Recursively walks directories, skips VCS folders, `node_modules`, build artifact
 Hidden project directories such as `.github` are scanned unless explicitly ignored; generated output is excluded only at its actual output-root path.
 Source analysis reads a bounded prefix (at most four bytes per configured character limit), including files larger than the runtime's whole-file read ceiling. The complete file is still counted in file-size metrics; `truncated_*` reports partial content analysis.
 
+Resource-ceiling failures include a stable identifier for automation while retaining
+operator-readable text. CI may match these codes: `SCOUT-LIMIT-ENTRIES`,
+`SCOUT-LIMIT-CODE-FILES`, `SCOUT-LIMIT-ANALYZED-BYTES`,
+`SCOUT-LIMIT-DEPENDENCIES`, `SCOUT-LIMIT-ROUTES`,
+`SCOUT-LIMIT-SECURITY-FINDINGS`, `SCOUT-LIMIT-IGNORE-RULES`,
+`SCOUT-LIMIT-BASELINE-BYTES`, and `SCOUT-LIMIT-IGNORE-BYTES`.
+
 ### Language Detection
 Maps 50+ file extensions to language names — including Python, JavaScript/TypeScript, Rust, Go, PHP, Ruby, Java/Kotlin, and additional ecosystems such as Haskell, Zig, Swift, Dart, Elixir, Clojure, Scala, and more.
 
