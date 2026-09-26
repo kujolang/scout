@@ -40,10 +40,12 @@ tests=(
 	tests/scripts/test_hidden_project_dirs.sh
 	tests/scripts/test_bounded_source_reads.sh
 	tests/scripts/test_rooted_source_reads.sh
+	tests/scripts/test_enterprise_boundaries.sh
 	tests/scripts/test_recoverable_publication.sh
 	tests/scripts/test_strict_partial_scans.sh
 	tests/scripts/test_optional_fastify_rules.sh
 	tests/scripts/test_large_benchmark_contract.sh
+	tests/scripts/test_analysis_coverage_targets.sh
 	tests/scripts/test_install_smoke.sh
 )
 

@@ -7,6 +7,11 @@
   "scan": {
     "default_max_depth": 6,
     "max_file_size": 500000,
+    "max_entries": 100000,
+    "max_code_files": 25000,
+    "max_total_analyzed_bytes": 268435456,
+    "max_analysis_results": 100000,
+    "max_ignore_rules": 4096,
     "ignored_dirs": [
       ".git", ".svn", ".hg", "node_modules", "__pycache__",
       ".venv", "venv", "env", ".env", ".tox", "dist", "build",
