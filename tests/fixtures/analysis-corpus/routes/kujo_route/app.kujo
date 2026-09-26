@@ -1,0 +1,2 @@
+server.route("PATCH", "/kujo", handler)
+server.route(dynamic_method, dynamic_path, handler)

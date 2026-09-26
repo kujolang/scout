@@ -1,0 +1,6 @@
+[package]
+name = "coverage"
+[dependencies]
+serde = "1"
+[dependencies.tokio]
+version = "1"

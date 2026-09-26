@@ -1,0 +1,4 @@
+requests==2.32.0
+urllib3>=2
+-r ignored.txt
+# ignored==1

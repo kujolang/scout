@@ -1,0 +1,9 @@
+[project]
+dependencies = ["requests>=2"]
+[project.optional-dependencies]
+docs = ["sphinx>=7"]
+[tool.poetry.dependencies]
+python = "^3.12"
+pendulum = "^3"
+[tool.poetry.group.test.dependencies]
+pytest = "^8"

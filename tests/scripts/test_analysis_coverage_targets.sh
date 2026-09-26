@@ -11,5 +11,5 @@ python3 tests/scripts/measure_analysis_coverage.py \
   --kujo "$KUJO_BIN" \
   --targets tests/analysis_targets.json \
   --output "$receipt"
-jq -e '.targets_passed == true and .metrics.route_precision == 1 and .metrics.route_recall == 1 and .metrics.security_precision == 1 and .metrics.security_recall == 1' "$receipt" >/dev/null
+jq -e '.targets_passed == true and ([.metrics[]] | all(. == 1)) and (.families.routes | length == 18) and (.families.dependencies | length == 10)' "$receipt" >/dev/null
 echo "Labeled analysis coverage target contract passed"

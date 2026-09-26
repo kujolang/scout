@@ -1,0 +1,7 @@
+name: coverage
+dependencies:
+  http: ^1.0.0
+  path:
+    path: ../ignored
+dev_dependencies:
+  test: ^1.0.0

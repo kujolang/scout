@@ -1,0 +1,34 @@
+{
+  "routes": {
+    "python_flask": ["ANY|/flask"],
+    "python_fastapi": ["POST|/fastapi"],
+    "python_django": ["ANY|/django"],
+    "javascript_express": ["GET|/express"],
+    "javascript_next_pages": ["ANY|/users"],
+    "javascript_next_app": ["ANY|/items"],
+    "javascript_fastify": ["GET|/fastify", "POST|/fastify-object"],
+    "php_laravel": ["GET|/laravel"],
+    "php_slim": ["POST|/slim"],
+    "php_symfony": ["ANY|/symfony"],
+    "php_wordpress_rest": ["ANY|/scout/v1/status"],
+    "php_wordpress_ajax": ["POST|/wp-admin/admin-ajax.php?action=scout_refresh"],
+    "php_wordpress_admin_post": ["ANY|/wp-admin/admin-post.php?action=scout_export"],
+    "rust_actix_axum": ["ANY|/rust"],
+    "go_gin": ["GET|/gin"],
+    "go_handle_func": ["ANY|/stdlib"],
+    "jvm_spring": ["GET|/spring"],
+    "kujo_route": ["PATCH|/kujo"]
+  },
+  "dependencies": {
+    "javascript_package_json": ["npm_dependencies|alpha", "npm_devDependencies|beta", "npm_peerDependencies|gamma", "npm_optionalDependencies|delta"],
+    "php_composer": ["composer_require|vendor/runtime", "composer_require-dev|vendor/test"],
+    "python_pyproject": ["pyproject_array|requests>=2", "poetry_dep|pendulum", "poetry_dep|pytest", "pyproject_optional|sphinx>=7"],
+    "rust_cargo": ["cargo_dep|serde", "cargo_dep_table|tokio"],
+    "go_module": ["go_mod_require|example.com/one", "go_mod_require|example.com/two"],
+    "python_requirements": ["pip_requirements|requests", "pip_requirements|urllib3"],
+    "ruby_gemfile": ["gemfile_dep|rack", "gemfile_dep|rspec"],
+    "dart_pubspec": ["pubspec_dependencies|http", "pubspec_dev_dependencies|test"],
+    "swift_package": ["swift_package|https://github.com/apple/swift-argument-parser"],
+    "elixir_mix": ["mix_dep|jason", "mix_dep|plug"]
+  }
+}

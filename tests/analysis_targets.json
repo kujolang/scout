@@ -1,10 +1,16 @@
 {
-  "contract": "scout-labeled-analysis-coverage-v1",
-  "description": "Minimum exact-match precision and recall on Scout's versioned route and security fixture corpus; this is corpus coverage, not a claim about all programs.",
+  "contract": "scout-labeled-analysis-coverage-v2",
+  "description": "Minimum aggregate and per-family exact-match precision and recall on Scout's versioned route, dependency-manifest, and security corpus; this is corpus coverage, not a claim about all programs.",
   "minimums": {
     "route_precision": 1.0,
     "route_recall": 1.0,
+    "dependency_precision": 1.0,
+    "dependency_recall": 1.0,
     "security_precision": 1.0,
-    "security_recall": 1.0
+    "security_recall": 1.0,
+    "minimum_route_family_precision": 1.0,
+    "minimum_route_family_recall": 1.0,
+    "minimum_dependency_family_precision": 1.0,
+    "minimum_dependency_family_recall": 1.0
   }
 }
