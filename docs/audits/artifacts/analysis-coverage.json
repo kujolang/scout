@@ -1,5 +1,278 @@
 {
+  "dependency": {
+    "false_negatives": 0,
+    "false_positives": 0,
+    "missing": [],
+    "precision": 1.0,
+    "recall": 1.0,
+    "true_positives": 23,
+    "unexpected": []
+  },
+  "families": {
+    "dependencies": {
+      "dart_pubspec": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "elixir_mix": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "go_module": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "javascript_package_json": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 4,
+        "unexpected": []
+      },
+      "php_composer": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "python_pyproject": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 4,
+        "unexpected": []
+      },
+      "python_requirements": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "ruby_gemfile": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "rust_cargo": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "swift_package": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      }
+    },
+    "routes": {
+      "go_gin": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "go_handle_func": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "javascript_express": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "javascript_fastify": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 2,
+        "unexpected": []
+      },
+      "javascript_next_app": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "javascript_next_pages": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "jvm_spring": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "kujo_route": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "php_laravel": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "php_slim": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "php_symfony": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "php_wordpress_admin_post": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "php_wordpress_ajax": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "php_wordpress_rest": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "python_django": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "python_fastapi": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "python_flask": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      },
+      "rust_actix_axum": {
+        "false_negatives": 0,
+        "false_positives": 0,
+        "missing": [],
+        "precision": 1.0,
+        "recall": 1.0,
+        "true_positives": 1,
+        "unexpected": []
+      }
+    }
+  },
   "metrics": {
+    "dependency_precision": 1.0,
+    "dependency_recall": 1.0,
+    "minimum_dependency_family_precision": 1.0,
+    "minimum_dependency_family_recall": 1.0,
+    "minimum_route_family_precision": 1.0,
+    "minimum_route_family_recall": 1.0,
     "route_precision": 1.0,
     "route_recall": 1.0,
     "security_precision": 1.0,
@@ -11,7 +284,7 @@
     "missing": [],
     "precision": 1.0,
     "recall": 1.0,
-    "true_positives": 7,
+    "true_positives": 19,
     "unexpected": []
   },
   "runtime_version": "kujo 1.5.0",
@@ -24,7 +297,7 @@
     "true_positives": 9,
     "unexpected": []
   },
-  "target_contract": "scout-labeled-analysis-coverage-v1",
+  "target_contract": "scout-labeled-analysis-coverage-v2",
   "targets_passed": true,
-  "tool": "scout-analysis-coverage-v1"
+  "tool": "scout-analysis-coverage-v2"
 }

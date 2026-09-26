@@ -308,8 +308,18 @@ tests/scripts/test_analysis_coverage_targets.sh
 ```
 
 Its versioned targets are in `tests/analysis_targets.json`; the checked-in receipt
-is `docs/audits/artifacts/analysis-coverage.json`. These figures describe only the
-committed literal-route and security fixtures, not arbitrary programs.
+is `docs/audits/artifacts/analysis-coverage.json`. The receipt publishes aggregate
+and per-family exact-match results for every documented literal-route and dependency
+manifest family, plus the security corpus. These figures describe only the committed
+fixtures, not arbitrary programs.
+
+Profile route accumulation, sorting, and full-report overhead without applying
+machine-specific latency thresholds:
+
+```bash
+python3 tests/scripts/profile_route_hotspot.py --kujo /path/to/kujo \
+  --output tests/tmp/route-hotspot-profile.json
+```
 
 Run focused suites:
 

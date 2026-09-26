@@ -26,17 +26,17 @@ analysis quality from observations into release gates.
 
 These are evidence and capability expansions, not known release blockers.
 
-1. **QUAL-002 — Broaden labeled analysis coverage.** Add framework-specific positive
+1. **QUAL-002 — Broaden labeled analysis coverage.** ✅ Add framework-specific positive
    and negative corpora for every documented route and manifest family, then publish
    per-family metrics instead of only aggregate exact-match scores.
-2. **PERF-004 — Profile the route-heavy hotspot.** Use Kujo/runtime profiling to measure
+2. **PERF-004 — Profile the route-heavy hotspot.** ✅ Use Kujo/runtime profiling to measure
    array rebuilding, sorting, and report assembly; accept optimizations only with output
    equivalence and improved full-benchmark receipts.
-3. **PORT-001 — Expand native Windows coverage.** Move from the current artifact smoke
+3. **PORT-001 — Expand native Windows coverage.** ✅ Move from the current artifact smoke
    to the portable non-Bash contract subset, or publish an equivalent PowerShell runner.
-4. **REL-004 — Reproducible dependency-lock refresh.** Add a documented command that
+4. **REL-004 — Reproducible dependency-lock refresh.** ✅ Add a documented command that
    regenerates and verifies the CPython 3.12 Linux wheel hashes in a clean environment.
-5. **UX-001 — Machine-readable limit diagnostics.** Preserve fail-closed resource
+5. **UX-001 — Machine-readable limit diagnostics.** ✅ Preserve fail-closed resource
    ceilings while adding stable error identifiers for CI consumers.
 
 ## Acceptance evidence
@@ -51,3 +51,6 @@ These are evidence and capability expansions, not known release blockers.
 Scout remains a heuristic local code-intelligence tool, not a universal static-analysis
 oracle. Enterprise readiness here means explicit boundaries, deterministic failure,
 reproducible release gates, and transparent corpus-scoped quality claims.
+
+All five evidence/capability expansions were completed on 2026-09-25. The next
+prioritized queue is in `SCOUT_NEXT_REVIEW_2026-09-25_ROUND_2.md`.

@@ -13,6 +13,9 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
   precision-recall targets, and checked-in verification receipts.
 - Add configurable aggregate ceilings for traversal, selected files, analyzed
   bytes, analysis results, and ignore rules.
+- Add per-family route and dependency-manifest precision/recall receipts, isolated
+  route-hotspot profiling, a native PowerShell contract runner, reproducible schema
+  lock refresh tooling, and stable resource-limit identifiers.
 
 ### Fixed
 - Root and bound target-relative baseline and ignore-file reads, reject paths
@@ -40,7 +43,7 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
   accepted baselines after a complete report, and require a Kujo runtime with
   the rooted prefix-read API (minimum release 1.5.0).
 - Install the official checksum-pinned Kujo 1.5.0 Linux and Windows binaries in
-  CI, verify a native Windows Scout artifact workflow, and document the
+  CI, verify a native Windows Scout route/security/artifact contract subset, and document the
   published runtime installation path instead of requiring a source build.
 - Update the immutable checkout action pin to its Node.js 24 release.
 - Scan useful hidden project directories and document production-readiness limits.

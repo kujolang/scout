@@ -4,11 +4,16 @@ This active checklist was restored during the 2026-09-07 hardening pass because
 README and contributor instructions referenced a file removed by an earlier cleanup.
 It records current work; it does not reconstruct historical checklist entries.
 For the next prioritized implementation queue, see
-[`SCOUT_NEXT_REVIEW_2026-09-22.md`](SCOUT_NEXT_REVIEW_2026-09-22.md).
+[`SCOUT_NEXT_REVIEW_2026-09-25_ROUND_2.md`](SCOUT_NEXT_REVIEW_2026-09-25_ROUND_2.md).
 
 - [x] HARD-001: Exact path boundaries, cross-rule redaction, scan diagnostics, numeric validation, and JSON fallback correctness; add behavioral regression coverage.
 - [x] HARD-002: Stable merge sorting and removal of unnecessary report/finding retention; preserve output contracts and measure representative scans.
 - [x] HARD-003: Repair the pinned CI reference and publish the audit with explicit verification limitations.
+- [x] QUAL-002: Publish aggregate and per-family exact-match coverage for every documented route and manifest family.
+- [x] PERF-004: Isolate array rebuilding, route sorting, and report-assembly profile evidence with output equivalence.
+- [x] PORT-001: Run the portable route, security-export, and artifact contract subset natively on Windows.
+- [x] REL-004: Deterministically regenerate and verify the Linux CPython 3.12 schema wheel hash lock.
+- [x] UX-001: Emit stable identifiers for every fail-closed resource ceiling.
 
 ## Work Log
 
@@ -60,3 +65,13 @@ For the next prioritized implementation queue, see
   with a focused regression script and fixture.
 - Clarified readiness limits in the README and added the next-session queue in
   `docs/SCOUT_NEXT_REVIEW_2026-09-22.md`.
+
+### 2026-09-25 — evidence and portability expansion
+
+- Expanded labeled coverage to 18 route families and 10 dependency-manifest families,
+  retaining the security corpus and publishing per-family scores.
+- Added output-equivalent profiling for repeated array rebuilding, route sorting, and
+  full-report assembly. No optimization was accepted without comparative evidence.
+- Replaced the Windows artifact-only smoke with a native PowerShell contract subset.
+- Added deterministic schema-lock regeneration/verification and offline tool coverage.
+- Added stable `SCOUT-LIMIT-*` identifiers and behavioral checks for representative ceilings.
