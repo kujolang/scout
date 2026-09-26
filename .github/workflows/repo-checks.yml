@@ -16,7 +16,7 @@ env:
 
 jobs:
   repo-checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -55,8 +55,9 @@ jobs:
       - name: Install schema validation dependency
         run: |
           set -euo pipefail
-          python3 -m pip install --upgrade pip
-          python3 -m pip install jsonschema
+          test "$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')" = "3.12"
+          python3 -m pip install --only-binary=:all: --require-hashes \
+            -r tests/requirements-schema-linux-py312.txt
 
       - name: Run Scout regression suite (fast path)
         env:
