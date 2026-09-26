@@ -129,20 +129,4 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $outputRoot = "tests/tmp/windows-release-smoke"
-          & $env:KUJO_BIN run scout.kujo tests/fixtures/arc001 -o $outputRoot -d 2 --strict --security-export sarif --kennel-index --kennel-metadata
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-          $manifestPath = Get-ChildItem -Path $outputRoot -Recurse -Filter scan_manifest.json | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $manifestPath) { throw "scan_manifest.json was not generated" }
-          $runDir = Split-Path $manifestPath
-          $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
-          $intelligence = Get-Content -Raw (Join-Path $runDir "intelligence.json") | ConvertFrom-Json
-
-          if ($intelligence.metrics.total_files -ne 2) { throw "Unexpected file count" }
-          if ($manifest.artifacts.security_sarif -ne "security.sarif") { throw "Missing SARIF artifact contract" }
-          foreach ($relativePath in @("README.md", "intelligence.json", "security.sarif", "index.json", "packages/arc001.json")) {
-            if (-not (Test-Path (Join-Path $runDir $relativePath))) {
-              throw "Missing Scout artifact: $relativePath"
-            }
-          }
+          & ./tests/scripts/test_windows_contract.ps1 -KujoBin $env:KUJO_BIN
