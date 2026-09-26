@@ -36,7 +36,7 @@ $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
 $intelligence = Get-Content -Raw (Join-Path $runDir "intelligence.json") | ConvertFrom-Json
 if ($intelligence.metrics.total_files -ne 2) { throw "Unexpected artifact-smoke file count" }
 if ($manifest.artifacts.security_sarif -ne "security.sarif") { throw "Missing SARIF artifact pointer" }
-foreach ($relativePath in @("README.md", "intelligence.json", "security.sarif", "index.json", "packages/arc001.json")) {
+foreach ($relativePath in @("README.md", "intelligence.json", "security.sarif", "index.json", $manifest.artifacts.kennel_metadata)) {
     if (-not (Test-Path (Join-Path $runDir $relativePath))) { throw "Missing Scout artifact: $relativePath" }
 }
 
