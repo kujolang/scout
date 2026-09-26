@@ -1,0 +1,16 @@
+{
+  "contract": "scout-performance-regression-v1",
+  "description": "Portable regression ceilings for deterministic Scout workloads. These are release gates, not user-facing latency SLAs.",
+  "modes": {
+    "fast": {
+      "many_files": {"max_elapsed_seconds": 10, "max_peak_rss_bytes": 268435456, "max_report_bytes": 2097152},
+      "route_heavy": {"max_elapsed_seconds": 10, "max_peak_rss_bytes": 268435456, "max_report_bytes": 2097152},
+      "large_source": {"max_elapsed_seconds": 10, "max_peak_rss_bytes": 268435456, "max_report_bytes": 2097152}
+    },
+    "full": {
+      "many_files": {"max_elapsed_seconds": 75, "max_peak_rss_bytes": 536870912, "max_report_bytes": 16777216},
+      "route_heavy": {"max_elapsed_seconds": 90, "max_peak_rss_bytes": 536870912, "max_report_bytes": 16777216},
+      "large_source": {"max_elapsed_seconds": 15, "max_peak_rss_bytes": 536870912, "max_report_bytes": 16777216}
+    }
+  }
+}

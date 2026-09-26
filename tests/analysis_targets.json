@@ -1,0 +1,10 @@
+{
+  "contract": "scout-labeled-analysis-coverage-v1",
+  "description": "Minimum exact-match precision and recall on Scout's versioned route and security fixture corpus; this is corpus coverage, not a claim about all programs.",
+  "minimums": {
+    "route_precision": 1.0,
+    "route_recall": 1.0,
+    "security_precision": 1.0,
+    "security_recall": 1.0
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic Scout workload generator and observational resource benchmark."""
+"""Deterministic Scout workload generator and resource-regression benchmark."""
 
 import argparse
 import hashlib
@@ -97,11 +97,30 @@ def run_case(runtime: Path, entry: Path, output: Path, name: str, case):
     }
 
 
+def evaluate_targets(measurements, targets, mode):
+    mode_targets = targets["modes"][mode]
+    failures = []
+    evaluations = {}
+    for name, values in measurements.items():
+        limits = mode_targets[name]
+        checks = {
+            "elapsed_seconds": values["elapsed_seconds"] <= limits["max_elapsed_seconds"],
+            "peak_rss_bytes": values["peak_rss_bytes"] <= limits["max_peak_rss_bytes"],
+            "report_bytes": values["report_bytes"] <= limits["max_report_bytes"],
+        }
+        evaluations[name] = {"limits": limits, "checks": checks, "passed": all(checks.values())}
+        for metric, passed in checks.items():
+            if not passed:
+                failures.append(f"{name}.{metric} exceeded its regression ceiling")
+    return evaluations, failures
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--kujo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--fast", action="store_true")
+    parser.add_argument("--targets", type=Path)
     args = parser.parse_args()
     runtime = args.kujo.resolve(strict=True)
     entry = Path(__file__).resolve().parents[2] / "scout.kujo"
@@ -112,14 +131,24 @@ def main():
         workloads = generate(fixture_root, args.fast)
         results = {name: run_case(runtime, entry, root / f"out-{name}", name, case)
                    for name, case in workloads.items()}
-    payload = {"tool": "scout-large-benchmark-v1", "runtime_version":
+    mode = "fast" if args.fast else "full"
+    payload = {"tool": "scout-large-benchmark-v2", "runtime_version":
                subprocess.check_output([str(runtime), "--version"], text=True).strip(),
-               "mode": "fast" if args.fast else "full", "host": os.uname().sysname,
+               "mode": mode, "host": os.uname().sysname,
                "measurements": results,
-               "note": "Observational child-process measurements; no CI speed thresholds."}
+               "note": "Portable regression ceilings, not latency service-level guarantees."}
+    failures = []
+    if args.targets:
+        targets = json.loads(args.targets.read_text())
+        evaluations, failures = evaluate_targets(results, targets, mode)
+        payload["target_contract"] = targets["contract"]
+        payload["target_evaluations"] = evaluations
+        payload["targets_passed"] = not failures
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     print(f"Validated {len(results)} deterministic workloads: {args.output}")
+    if failures:
+        raise SystemExit("; ".join(failures))
 
 
 if __name__ == "__main__":

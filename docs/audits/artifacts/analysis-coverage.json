@@ -1,0 +1,30 @@
+{
+  "metrics": {
+    "route_precision": 1.0,
+    "route_recall": 1.0,
+    "security_precision": 1.0,
+    "security_recall": 1.0
+  },
+  "route": {
+    "false_negatives": 0,
+    "false_positives": 0,
+    "missing": [],
+    "precision": 1.0,
+    "recall": 1.0,
+    "true_positives": 7,
+    "unexpected": []
+  },
+  "runtime_version": "kujo 1.5.0",
+  "security": {
+    "false_negatives": 0,
+    "false_positives": 0,
+    "missing": [],
+    "precision": 1.0,
+    "recall": 1.0,
+    "true_positives": 9,
+    "unexpected": []
+  },
+  "target_contract": "scout-labeled-analysis-coverage-v1",
+  "targets_passed": true,
+  "tool": "scout-analysis-coverage-v1"
+}
