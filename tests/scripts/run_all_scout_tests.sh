@@ -45,6 +45,7 @@ tests=(
 	tests/scripts/test_strict_partial_scans.sh
 	tests/scripts/test_optional_fastify_rules.sh
 	tests/scripts/test_large_benchmark_contract.sh
+	tests/scripts/test_route_hotspot_profile.sh
 	tests/scripts/test_analysis_coverage_targets.sh
 	tests/scripts/test_install_smoke.sh
 )

@@ -1,0 +1,15 @@
+from lib.sorting import sort_routes
+
+count := to_int(args()[0])
+routes := []
+build_start := performance_now()
+i := count
+while i > 0 {
+    routes := push(routes, {"method": "GET", "path": "/route/" + to_string(i), "source": "routes.py"})
+    i := i - 1
+}
+build_ms := performance_now() - build_start
+sort_start := performance_now()
+sorted := sort_routes(routes)
+sort_ms := performance_now() - sort_start
+print(to_json({"count": len(sorted), "array_rebuild_ms": build_ms, "sorting_ms": sort_ms, "first_path": sorted[0]["path"]}))

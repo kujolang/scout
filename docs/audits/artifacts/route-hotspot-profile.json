@@ -1,0 +1,30 @@
+{
+  "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+  "output_equivalent": true,
+  "phases": {
+    "array_rebuilding": {
+      "elapsed_ms": 413.791,
+      "method": "isolated repeated push"
+    },
+    "full_scan": {
+      "elapsed_seconds": 1.92,
+      "report_bytes": 28193
+    },
+    "quick_scan": {
+      "elapsed_seconds": 1.69,
+      "report_bytes": 27101
+    },
+    "report_assembly_proxy": {
+      "additional_bytes": 1092,
+      "elapsed_seconds": 0.23,
+      "method": "full scan minus output-equivalent quick scan"
+    },
+    "sorting": {
+      "elapsed_ms": 500.7,
+      "method": "isolated sort_routes after accumulation"
+    }
+  },
+  "routes": 256,
+  "runtime_version": "kujo 1.5.0",
+  "tool": "scout-route-hotspot-profile-v1"
+}
