@@ -7,6 +7,17 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 ## [Unreleased]
 
 ### Added
+_None yet._
+
+### Changed
+_None yet._
+
+### Fixed
+_None yet._
+
+## [1.1.0] - 2026-09-25
+
+### Added
 - Add opt-in strict partial-scan exits, literal Fastify object-route discovery,
   bounded source reads, and deterministic large-scan benchmark coverage.
 - Add versioned performance regression ceilings, labeled route/security

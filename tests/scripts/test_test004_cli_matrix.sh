@@ -61,7 +61,7 @@ mkdir -p "$OUT_ROOT"
 cd "$REPO_ROOT"
 
 run_expect_success "Scout" "$KUJO_BIN" run scout.kujo -- --help
-run_expect_success "1.0.0" "$KUJO_BIN" run scout.kujo -- --version
+run_expect_success "1.1.0" "$KUJO_BIN" run scout.kujo -- --version
 
 run_expect_fail "Error: unknown option: --unknown-flag" "$KUJO_BIN" run scout.kujo -- "$TARGET_REL" --unknown-flag
 run_expect_fail "Error: missing value for -o" "$KUJO_BIN" run scout.kujo -- "$TARGET_REL" -o

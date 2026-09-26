@@ -12,6 +12,7 @@ if [[ ! -f scout.kujo || ! -f config.json ]]; then
 fi
 
 scout_version="$(grep -E '^VERSION := "' scout.kujo | head -n 1 | cut -d '"' -f 2)"
+runtime_version="$(grep -E '^VERSION := "' lib/scout_runtime.kujo | head -n 1 | cut -d '"' -f 2)"
 config_version="$(jq -r '.tool.version' config.json)"
 version_file="$(tr -d '\n' < VERSION)"
 kujo_project_version="$(awk -F '"' '/^version = "/ {print $2; exit}' kujo.toml)"
@@ -34,8 +35,8 @@ if [[ "$scout_version" != "$config_version" ]]; then
 	exit 1
 fi
 
-if [[ "$scout_version" != "$version_file" || "$scout_version" != "$kujo_project_version" || "$scout_version" != "$kennel_project_version" ]]; then
-	echo "Version mismatch among scout.kujo, config.json, VERSION, kujo.toml, and kennel.toml"
+if [[ "$scout_version" != "$runtime_version" || "$scout_version" != "$version_file" || "$scout_version" != "$kujo_project_version" || "$scout_version" != "$kennel_project_version" ]]; then
+	echo "Version mismatch among scout.kujo, lib/scout_runtime.kujo, config.json, VERSION, kujo.toml, and kennel.toml"
 	exit 1
 fi
 

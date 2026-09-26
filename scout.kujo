@@ -1,6 +1,6 @@
-# Scout v1.0.0 (Kujo-native)
+# Scout v1.1.0 (Kujo-native)
 
-VERSION := "1.0.0"
+VERSION := "1.1.0"
 
 from lib.scout_runtime import SCOUT_RUNTIME_LOADED
 

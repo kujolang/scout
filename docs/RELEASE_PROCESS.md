@@ -7,6 +7,7 @@ This process is intentionally lightweight and designed for deterministic release
 Scout version values must stay aligned across:
 
 - scout.kujo (`VERSION := "x.y.z"`)
+- lib/scout_runtime.kujo (`VERSION := "x.y.z"`, the runtime-reported value)
 - config.json (`tool.version`)
 - VERSION, kujo.toml, and kennel.toml (package `version`)
 

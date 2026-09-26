@@ -1,7 +1,7 @@
 {
   "tool": {
     "name": "scout",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Scout codebase intelligence tool for file scanning, language detection, dependency analysis, route discovery, security smell detection, and agent-ready context generation."
   },
   "scan": {
