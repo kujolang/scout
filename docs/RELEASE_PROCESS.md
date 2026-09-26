@@ -18,6 +18,19 @@ runtime compatibility tests together when raising the supported runtime floor.
 
 CI enforces this via `tests/scripts/check_version_consistency.sh`.
 
+The schema-validation environment is locked to exact CPython 3.12 Linux x86_64
+wheels. Refresh and verify it from a clean Python 3.12 environment with:
+
+```bash
+python3.12 -m venv /tmp/scout-schema-lock
+/tmp/scout-schema-lock/bin/python -m pip install --upgrade pip
+/tmp/scout-schema-lock/bin/python tests/scripts/refresh_schema_lock.py
+/tmp/scout-schema-lock/bin/python tests/scripts/refresh_schema_lock.py --check
+```
+
+The seed file pins the complete dependency graph. The refresh tool downloads only
+binary wheels for the CI ABI/platform and deterministically rewrites the hash lock.
+
 ## Changelog Convention
 
 Use `CHANGELOG.md` with these sections:
