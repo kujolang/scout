@@ -39,4 +39,32 @@ if [[ "$python_count" -lt 1 || "$js_count" -lt 1 ]]; then
 	exit 1
 fi
 
+suffix_fixture="$OUT_ROOT/suffix-fixture"
+mkdir -p "$suffix_fixture/nested"
+printf 'import pathlib\n' > "$suffix_fixture/.py"
+printf 'import sys\n' > "$suffix_fixture/nested/multi.part..py"
+printf 'import ignored_case\n' > "$suffix_fixture/source.PY"
+printf 'import ignored_trailing_dot\n' > "$suffix_fixture/source.py."
+printf 'import ignored_binary\n' > "$suffix_fixture/source.py.png"
+printf 'gem "rack"\n' > "$suffix_fixture/Gemfile"
+printf 'requests==2.32.0\n' > "$suffix_fixture/requirements-dev.txt"
+
+for profile in full minimal; do
+	"$KUJO_BIN" run "$REPO_ROOT/scout.kujo" -- "$suffix_fixture" \
+		-o "$OUT_ROOT/$profile" --output-profile "$profile" --strict > "$OUT_ROOT/$profile.log"
+	report="$(find "$OUT_ROOT/$profile" -mindepth 1 -maxdepth 1 -type d)"
+	jq -e '
+		.metrics.total_files == 4 and .metrics.languages.Python == 2 and
+		[.dependencies[].module] == ["pathlib", "rack", "requests", "sys"]
+	' "$report/intelligence.json" >/dev/null
+	if [[ "$profile" == full ]]; then
+		full_report="$report"
+		grep -qE '^    - \[F\] multi\.part\.\.py \(Python,' "$report/FILE_TREE.md"
+		grep -qE '^  - \[F\] source\.PY \(Unknown,' "$report/FILE_TREE.md"
+	else
+		test ! -e "$report/FILE_TREE.md"
+		diff -u "$full_report/README.md" "$report/README.md"
+	fi
+done
+
 echo "ARC-001 language metrics regression test passed"

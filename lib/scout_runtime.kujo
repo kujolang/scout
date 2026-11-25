@@ -955,7 +955,11 @@ if file_exists(OUTPUT_ROOT) {
 }
 
 PARSE_ERRORS := []
-TREE_LINES := ["# Project File Tree", "", "- [D] " + markdown_data(TARGET_DISPLAY)]
+BUILD_FILE_TREE := OUTPUT_PROFILE == "full"
+TREE_LINES := []
+if BUILD_FILE_TREE {
+    TREE_LINES := ["# Project File Tree", "", "- [D] " + markdown_data(TARGET_DISPLAY)]
+}
 CODE_FILES := []
 TOTAL_FILES_SEEN := 0
 TOTAL_DIRS_SEEN := 0
@@ -972,6 +976,10 @@ while len(LEVEL_DIRS) > 0 {
         dir_path := dir_node["path"]
         dir_depth := dir_node["depth"]
         dir_out_path := dir_node["out_path"]
+        indent := ""
+        if BUILD_FILE_TREE {
+            indent := repeat("  ", dir_depth + 1)
+        }
 
         try {
             items := sort_strings_asc(list_dir(dir_path))
@@ -1022,16 +1030,11 @@ while len(LEVEL_DIRS) > 0 {
                             }
 
                             if !excluded && include_allowed {
-                                indent := ""
-                                ind_i := 0
-                                while ind_i < dir_depth + 1 {
-                                    indent := indent + "  "
-                                    ind_i := ind_i + 1
-                                }
-
                                 if child_is_dir {
                                     TOTAL_DIRS_SEEN := TOTAL_DIRS_SEEN + 1
-                                    TREE_LINES := push(TREE_LINES, indent + "- [D] " + markdown_data(item))
+                                    if BUILD_FILE_TREE {
+                                        TREE_LINES := push(TREE_LINES, indent + "- [D] " + markdown_data(item))
+                                    }
                                     directory_cycle := false
                                     for ancestor in dir_node["ancestors"] {
                                         if child_abs == ancestor {
@@ -1057,32 +1060,29 @@ while len(LEVEL_DIRS) > 0 {
                                         PARSE_ERRORS := push(PARSE_ERRORS, {"file": rel_path, "error": "stat_failed"})
                                     }
 
+                                    # Match the final dotted suffix, including names such as ".py".
+                                    name_parts := split(item, ".")
+                                    suffix := ""
+                                    if len(name_parts) > 1 {
+                                        suffix := "." + name_parts[len(name_parts) - 1]
+                                    }
                                     lang := "Unknown"
-                                    for ext in keys(LANGUAGE_MAP) {
-                                        if ends_with(item, ext) {
-                                            lang := LANGUAGE_MAP[ext]
-                                            break
+                                    if has_key(LANGUAGE_MAP, suffix) {
+                                        lang := LANGUAGE_MAP[suffix]
+                                    }
+
+                                    if BUILD_FILE_TREE {
+                                        size_label := to_string(file_size_bytes) + " B"
+                                        if file_size_bytes >= 1024 && file_size_bytes < 1048576 {
+                                            size_label := to_string(round((file_size_bytes / 1024) * 10) / 10) + " KB"
                                         }
-                                    }
-
-                                    size_label := to_string(file_size_bytes) + " B"
-                                    if file_size_bytes >= 1024 && file_size_bytes < 1048576 {
-                                        size_label := to_string(round((file_size_bytes / 1024) * 10) / 10) + " KB"
-                                    }
-                                    if file_size_bytes >= 1048576 {
-                                        size_label := to_string(round((file_size_bytes / 1048576) * 10) / 10) + " MB"
-                                    }
-
-                                    TREE_LINES := push(TREE_LINES, indent + "- [F] " + markdown_data(item) + " (" + lang + ", " + size_label + ")")
-
-                                    ignored_ext := false
-                                    for ext2 in keys(IGNORED_EXTS) {
-                                        if ends_with(item, ext2) {
-                                            ignored_ext := true
-                                            break
+                                        if file_size_bytes >= 1048576 {
+                                            size_label := to_string(round((file_size_bytes / 1048576) * 10) / 10) + " MB"
                                         }
+                                        TREE_LINES := push(TREE_LINES, indent + "- [F] " + markdown_data(item) + " (" + lang + ", " + size_label + ")")
                                     }
 
+                                    ignored_ext := has_key(IGNORED_EXTS, suffix) == 1
                                     include_as_code := false
                                     if !ignored_ext && lang != "Unknown" && lang != "Lock File" {
                                         include_as_code := true
@@ -1139,9 +1139,10 @@ if METRICS_ENABLED {
     METRICS["total_files"] := len(CODE_FILES)
 }
 
-DEPENDENCIES := []
+# Dense numeric keys append in discovery order without copying growing arrays.
+DEP_RECORDS := {}
 DEP_SEEN := {}
-ROUTES := []
+ROUTE_RECORDS := {}
 ROUTE_SEEN := {}
 SECURITY_FINDINGS := []
 ALL_SECURITY_FINDINGS := []
@@ -1223,7 +1224,7 @@ for code_file in CODE_FILES {
                                 pkg_json_key := "npm_" + pkg_section_name + "|" + pkg_dep_name
                                 if has_key(DEP_SEEN, pkg_json_key) == 0 {
                                     DEP_SEEN[pkg_json_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "npm_" + pkg_section_name, "module": pkg_dep_name, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "npm_" + pkg_section_name, "module": pkg_dep_name, "source": out_path}
                                 }
                             }
                         }
@@ -1265,7 +1266,7 @@ for code_file in CODE_FILES {
                                                 pkg_key := "npm_" + pkg_section + "|" + pkg_dep
                                                 if has_key(DEP_SEEN, pkg_key) == 0 {
                                                     DEP_SEEN[pkg_key] := true
-                                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "npm_" + pkg_section, "module": pkg_dep, "source": out_path})
+                                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "npm_" + pkg_section, "module": pkg_dep, "source": out_path}
                                                 }
                                             }
                                         }
@@ -1292,7 +1293,7 @@ for code_file in CODE_FILES {
                                     composer_json_key := "composer_" + composer_section_name + "|" + composer_dep_name
                                     if has_key(DEP_SEEN, composer_json_key) == 0 {
                                         DEP_SEEN[composer_json_key] := true
-                                        DEPENDENCIES := push(DEPENDENCIES, {"type": "composer_" + composer_section_name, "module": composer_dep_name, "source": out_path})
+                                        DEP_RECORDS[len(DEP_RECORDS)] := {"type": "composer_" + composer_section_name, "module": composer_dep_name, "source": out_path}
                                     }
                                 }
                             }
@@ -1329,7 +1330,7 @@ for code_file in CODE_FILES {
                                                 composer_key := "composer_" + composer_section + "|" + composer_dep
                                                 if has_key(DEP_SEEN, composer_key) == 0 {
                                                     DEP_SEEN[composer_key] := true
-                                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "composer_" + composer_section, "module": composer_dep, "source": out_path})
+                                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "composer_" + composer_section, "module": composer_dep, "source": out_path}
                                                 }
                                             }
                                         }
@@ -1386,7 +1387,7 @@ for code_file in CODE_FILES {
                                         py_key := "pyproject_array|" + py_dep
                                         if has_key(DEP_SEEN, py_key) == 0 {
                                             DEP_SEEN[py_key] := true
-                                            DEPENDENCIES := push(DEPENDENCIES, {"type": "pyproject_array", "module": py_dep, "source": out_path})
+                                            DEP_RECORDS[len(DEP_RECORDS)] := {"type": "pyproject_array", "module": py_dep, "source": out_path}
                                         }
                                     }
                                     scan_pos := q_end + 1
@@ -1416,7 +1417,7 @@ for code_file in CODE_FILES {
                                     poetry_key := "poetry_dep|" + poetry_dep
                                     if has_key(DEP_SEEN, poetry_key) == 0 {
                                         DEP_SEEN[poetry_key] := true
-                                        DEPENDENCIES := push(DEPENDENCIES, {"type": "poetry_dep", "module": poetry_dep, "source": out_path})
+                                        DEP_RECORDS[len(DEP_RECORDS)] := {"type": "poetry_dep", "module": poetry_dep, "source": out_path}
                                     }
                                 }
                             }
@@ -1449,7 +1450,7 @@ for code_file in CODE_FILES {
                                         py_key2 := "pyproject_optional|" + py_dep2
                                         if has_key(DEP_SEEN, py_key2) == 0 {
                                             DEP_SEEN[py_key2] := true
-                                            DEPENDENCIES := push(DEPENDENCIES, {"type": "pyproject_optional", "module": py_dep2, "source": out_path})
+                                            DEP_RECORDS[len(DEP_RECORDS)] := {"type": "pyproject_optional", "module": py_dep2, "source": out_path}
                                         }
                                     }
                                     scan_pos2 := q_end2 + 1
@@ -1482,7 +1483,7 @@ for code_file in CODE_FILES {
                                 dep_table_key := "cargo_dep_table|" + dep_table_name
                                 if has_key(DEP_SEEN, dep_table_key) == 0 {
                                     DEP_SEEN[dep_table_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "cargo_dep_table", "module": dep_table_name, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "cargo_dep_table", "module": dep_table_name, "source": out_path}
                                 }
                             }
                         }
@@ -1494,7 +1495,7 @@ for code_file in CODE_FILES {
                                 dep_table_key2 := "cargo_dep_table|" + dep_table_name2
                                 if has_key(DEP_SEEN, dep_table_key2) == 0 {
                                     DEP_SEEN[dep_table_key2] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "cargo_dep_table", "module": dep_table_name2, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "cargo_dep_table", "module": dep_table_name2, "source": out_path}
                                 }
                             }
                         }
@@ -1518,7 +1519,7 @@ for code_file in CODE_FILES {
                                 cargo_key := "cargo_dep|" + cargo_dep
                                 if has_key(DEP_SEEN, cargo_key) == 0 {
                                     DEP_SEEN[cargo_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "cargo_dep", "module": cargo_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "cargo_dep", "module": cargo_dep, "source": out_path}
                                 }
                             }
                         }
@@ -1556,7 +1557,7 @@ for code_file in CODE_FILES {
                                 go_key := "go_mod_require|" + go_dep
                                 if has_key(DEP_SEEN, go_key) == 0 {
                                     DEP_SEEN[go_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "go_mod_require", "module": go_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "go_mod_require", "module": go_dep, "source": out_path}
                                 }
                             }
                         }
@@ -1575,7 +1576,7 @@ for code_file in CODE_FILES {
                                 go_key2 := "go_mod_require|" + go_dep2
                                 if has_key(DEP_SEEN, go_key2) == 0 {
                                     DEP_SEEN[go_key2] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "go_mod_require", "module": go_dep2, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "go_mod_require", "module": go_dep2, "source": out_path}
                                 }
                             }
                         }
@@ -1611,7 +1612,7 @@ for code_file in CODE_FILES {
                             req_key := "pip_requirements|" + req_dep
                             if has_key(DEP_SEEN, req_key) == 0 {
                                 DEP_SEEN[req_key] := true
-                                DEPENDENCIES := push(DEPENDENCIES, {"type": "pip_requirements", "module": req_dep, "source": out_path})
+                                DEP_RECORDS[len(DEP_RECORDS)] := {"type": "pip_requirements", "module": req_dep, "source": out_path}
                             }
                         }
                     }
@@ -1628,7 +1629,7 @@ for code_file in CODE_FILES {
                             gem_key := "gemfile_dep|" + gem_dep
                             if has_key(DEP_SEEN, gem_key) == 0 {
                                 DEP_SEEN[gem_key] := true
-                                DEPENDENCIES := push(DEPENDENCIES, {"type": "gemfile_dep", "module": gem_dep, "source": out_path})
+                                DEP_RECORDS[len(DEP_RECORDS)] := {"type": "gemfile_dep", "module": gem_dep, "source": out_path}
                             }
                         }
                     }
@@ -1659,7 +1660,7 @@ for code_file in CODE_FILES {
                                 pub_key := "pubspec_" + pub_section + "|" + pub_dep
                                 if has_key(DEP_SEEN, pub_key) == 0 {
                                     DEP_SEEN[pub_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "pubspec_" + pub_section, "module": pub_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "pubspec_" + pub_section, "module": pub_dep, "source": out_path}
                                 }
                             }
                         }
@@ -1676,7 +1677,7 @@ for code_file in CODE_FILES {
                             swift_pkg_key := "swift_package|" + swift_pkg_dep
                             if has_key(DEP_SEEN, swift_pkg_key) == 0 {
                                 DEP_SEEN[swift_pkg_key] := true
-                                DEPENDENCIES := push(DEPENDENCIES, {"type": "swift_package", "module": swift_pkg_dep, "source": out_path})
+                                DEP_RECORDS[len(DEP_RECORDS)] := {"type": "swift_package", "module": swift_pkg_dep, "source": out_path}
                             }
                         }
                     }
@@ -1697,7 +1698,7 @@ for code_file in CODE_FILES {
                                 mix_key := "mix_dep|" + mix_dep
                                 if has_key(DEP_SEEN, mix_key) == 0 {
                                     DEP_SEEN[mix_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "mix_dep", "module": mix_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "mix_dep", "module": mix_dep, "source": out_path}
                                 }
                             }
                         }
@@ -1736,7 +1737,7 @@ for code_file in CODE_FILES {
                         next_key := "ANY|" + route_path_file + "|" + path
                         if has_key(ROUTE_SEEN, next_key) == 0 {
                             ROUTE_SEEN[next_key] := true
-                            ROUTES := push(ROUTES, {"method": "ANY", "path": route_path_file, "source": out_path})
+                            ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": route_path_file, "source": out_path}
                         }
                     }
                 }
@@ -1770,7 +1771,7 @@ for code_file in CODE_FILES {
                         app_next_key := "ANY|" + app_route_path + "|" + path
                         if has_key(ROUTE_SEEN, app_next_key) == 0 {
                             ROUTE_SEEN[app_next_key] := true
-                            ROUTES := push(ROUTES, {"method": "ANY", "path": app_route_path, "source": out_path})
+                            ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": app_route_path, "source": out_path}
                         }
                     }
                 }
@@ -1789,10 +1790,10 @@ for code_file in CODE_FILES {
         inside_go_import_block := false
         for line in lines {
             line_num := line_num + 1
-            if len(DEPENDENCIES) >= MAX_ANALYSIS_RESULTS {
+            if len(DEP_RECORDS) >= MAX_ANALYSIS_RESULTS {
                 limit_error("SCOUT-LIMIT-DEPENDENCIES", "dependency result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
             }
-            if len(ROUTES) >= MAX_ANALYSIS_RESULTS {
+            if len(ROUTE_RECORDS) >= MAX_ANALYSIS_RESULTS {
                 limit_error("SCOUT-LIMIT-ROUTES", "route result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
             }
             if SECURITY_FINDINGS_TOTAL >= MAX_ANALYSIS_RESULTS {
@@ -1822,7 +1823,7 @@ for code_file in CODE_FILES {
                                     dep_key := "import|" + dep_module
                                     if has_key(DEP_SEEN, dep_key) == 0 {
                                         DEP_SEEN[dep_key] := true
-                                        DEPENDENCIES := push(DEPENDENCIES, {"type": "import", "module": dep_module, "source": out_path})
+                                        DEP_RECORDS[len(DEP_RECORDS)] := {"type": "import", "module": dep_module, "source": out_path}
                                     }
                                 }
                             }
@@ -1842,7 +1843,7 @@ for code_file in CODE_FILES {
                                 dep_key2 := "import|" + dep_module2
                                 if has_key(DEP_SEEN, dep_key2) == 0 {
                                     DEP_SEEN[dep_key2] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "import", "module": dep_module2, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "import", "module": dep_module2, "source": out_path}
                                 }
                             }
                         }
@@ -1855,7 +1856,7 @@ for code_file in CODE_FILES {
                                 dep_key3 := "module|" + qval
                                 if has_key(DEP_SEEN, dep_key3) == 0 {
                                     DEP_SEEN[dep_key3] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "module", "module": qval, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "module", "module": qval, "source": out_path}
                                 }
                             }
                         }
@@ -1879,7 +1880,7 @@ for code_file in CODE_FILES {
                                 dep_key4 := "use|" + dep_module3
                                 if has_key(DEP_SEEN, dep_key4) == 0 {
                                     DEP_SEEN[dep_key4] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "use", "module": dep_module3, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "use", "module": dep_module3, "source": out_path}
                                 }
                             }
                         }
@@ -1903,7 +1904,7 @@ for code_file in CODE_FILES {
                                 dep_key5 := "rust_use|" + dep_module4
                                 if has_key(DEP_SEEN, dep_key5) == 0 {
                                     DEP_SEEN[dep_key5] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "rust_use", "module": dep_module4, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "rust_use", "module": dep_module4, "source": out_path}
                                 }
                             }
                         }
@@ -1925,7 +1926,7 @@ for code_file in CODE_FILES {
                                 dep_key6 := "extern_crate|" + dep_module5
                                 if has_key(DEP_SEEN, dep_key6) == 0 {
                                     DEP_SEEN[dep_key6] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "extern_crate", "module": dep_module5, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "extern_crate", "module": dep_module5, "source": out_path}
                                 }
                             }
                         }
@@ -1942,7 +1943,7 @@ for code_file in CODE_FILES {
                                 dep_key_block := "go_import|" + dep_module_block
                                 if has_key(DEP_SEEN, dep_key_block) == 0 {
                                     DEP_SEEN[dep_key_block] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "go_import", "module": dep_module_block, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "go_import", "module": dep_module_block, "source": out_path}
                                 }
                             }
                         }
@@ -1960,7 +1961,7 @@ for code_file in CODE_FILES {
                                 dep_key9 := "go_import|" + dep_module8
                                 if has_key(DEP_SEEN, dep_key9) == 0 {
                                     DEP_SEEN[dep_key9] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "go_import", "module": dep_module8, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "go_import", "module": dep_module8, "source": out_path}
                                 }
                             }
                         }
@@ -1991,7 +1992,7 @@ for code_file in CODE_FILES {
                                 hs_key := "haskell_import|" + hs_dep
                                 if has_key(DEP_SEEN, hs_key) == 0 {
                                     DEP_SEEN[hs_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "haskell_import", "module": hs_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "haskell_import", "module": hs_dep, "source": out_path}
                                 }
                             }
                         }
@@ -2014,7 +2015,7 @@ for code_file in CODE_FILES {
                                 zig_key := "zig_import|" + zig_dep
                                 if has_key(DEP_SEEN, zig_key) == 0 {
                                     DEP_SEEN[zig_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "zig_import", "module": zig_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "zig_import", "module": zig_dep, "source": out_path}
                                 }
                             }
                         }
@@ -2035,7 +2036,7 @@ for code_file in CODE_FILES {
                                 sw_key := "swift_import|" + sw_dep
                                 if has_key(DEP_SEEN, sw_key) == 0 {
                                     DEP_SEEN[sw_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "swift_import", "module": sw_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "swift_import", "module": sw_dep, "source": out_path}
                                 }
                             }
                         }
@@ -2058,7 +2059,7 @@ for code_file in CODE_FILES {
                                 dart_key := "dart_import|" + dart_dep
                                 if has_key(DEP_SEEN, dart_key) == 0 {
                                     DEP_SEEN[dart_key] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "dart_import", "module": dart_dep, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "dart_import", "module": dart_dep, "source": out_path}
                                 }
                             }
                         }
@@ -2081,7 +2082,7 @@ for code_file in CODE_FILES {
                                 dep_key10 := "ruby_dep|" + dep_module9
                                 if has_key(DEP_SEEN, dep_key10) == 0 {
                                     DEP_SEEN[dep_key10] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "ruby_dep", "module": dep_module9, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "ruby_dep", "module": dep_module9, "source": out_path}
                                 }
                             }
                         }
@@ -2116,7 +2117,7 @@ for code_file in CODE_FILES {
                                 dep_key11 := dep_kind + "|" + dep_module10
                                 if has_key(DEP_SEEN, dep_key11) == 0 {
                                     DEP_SEEN[dep_key11] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": dep_kind, "module": dep_module10, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": dep_kind, "module": dep_module10, "source": out_path}
                                 }
                             }
                         }
@@ -2154,7 +2155,7 @@ for code_file in CODE_FILES {
                                 dep_key7 := "kujo_import|" + dep_module6
                                 if has_key(DEP_SEEN, dep_key7) == 0 {
                                     DEP_SEEN[dep_key7] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "kujo_import", "module": dep_module6, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "kujo_import", "module": dep_module6, "source": out_path}
                                 }
                             }
                         }
@@ -2173,7 +2174,7 @@ for code_file in CODE_FILES {
                                 dep_key8 := "kujo_import|" + dep_module7
                                 if has_key(DEP_SEEN, dep_key8) == 0 {
                                     DEP_SEEN[dep_key8] := true
-                                    DEPENDENCIES := push(DEPENDENCIES, {"type": "kujo_import", "module": dep_module7, "source": out_path})
+                                    DEP_RECORDS[len(DEP_RECORDS)] := {"type": "kujo_import", "module": dep_module7, "source": out_path}
                                 }
                             }
                         }
@@ -2188,7 +2189,7 @@ for code_file in CODE_FILES {
                                 route_key := "ANY|" + p_route + "|" + path
                                 if has_key(ROUTE_SEEN, route_key) == 0 {
                                     ROUTE_SEEN[route_key] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": p_route, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": p_route, "source": out_path}
                                 }
                             }
                         }
@@ -2202,7 +2203,7 @@ for code_file in CODE_FILES {
                                     py_key2 := py_method + "|" + py_route2 + "|" + path
                                     if has_key(ROUTE_SEEN, py_key2) == 0 {
                                         ROUTE_SEEN[py_key2] := true
-                                        ROUTES := push(ROUTES, {"method": py_method, "path": py_route2, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": py_method, "path": py_route2, "source": out_path}
                                     }
                                 }
                             }
@@ -2215,7 +2216,7 @@ for code_file in CODE_FILES {
                                 py_api_key := "ANY|" + py_api_route + "|" + path
                                 if has_key(ROUTE_SEEN, py_api_key) == 0 {
                                     ROUTE_SEEN[py_api_key] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": py_api_route, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": py_api_route, "source": out_path}
                                 }
                             }
                         }
@@ -2230,7 +2231,7 @@ for code_file in CODE_FILES {
                                     dj_key := "ANY|" + dj_route + "|" + path
                                     if has_key(ROUTE_SEEN, dj_key) == 0 {
                                         ROUTE_SEEN[dj_key] := true
-                                        ROUTES := push(ROUTES, {"method": "ANY", "path": dj_route, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": dj_route, "source": out_path}
                                     }
                                 }
                             }
@@ -2251,7 +2252,7 @@ for code_file in CODE_FILES {
                                 fastify_key := fastify_method + "|" + fastify_path + "|" + path
                                 if has_key(ROUTE_SEEN, fastify_key) == 0 {
                                     ROUTE_SEEN[fastify_key] := true
-                                    ROUTES := push(ROUTES, {"method": fastify_method, "path": fastify_path, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": fastify_method, "path": fastify_path, "source": out_path}
                                 }
                             }
                         }
@@ -2263,7 +2264,7 @@ for code_file in CODE_FILES {
                                     route_key2 := method + "|" + js_route + "|" + path
                                     if has_key(ROUTE_SEEN, route_key2) == 0 {
                                         ROUTE_SEEN[route_key2] := true
-                                        ROUTES := push(ROUTES, {"method": method, "path": js_route, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": method, "path": js_route, "source": out_path}
                                     }
                                 }
                             }
@@ -2279,7 +2280,7 @@ for code_file in CODE_FILES {
                                     route_key3 := method2 + "|" + php_route + "|" + path
                                     if has_key(ROUTE_SEEN, route_key3) == 0 {
                                         ROUTE_SEEN[route_key3] := true
-                                        ROUTES := push(ROUTES, {"method": method2, "path": php_route, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": method2, "path": php_route, "source": out_path}
                                     }
                                 }
                             }
@@ -2291,7 +2292,7 @@ for code_file in CODE_FILES {
                                     slim_key := slim_method + "|" + slim_route + "|" + path
                                     if has_key(ROUTE_SEEN, slim_key) == 0 {
                                         ROUTE_SEEN[slim_key] := true
-                                        ROUTES := push(ROUTES, {"method": slim_method, "path": slim_route, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": slim_method, "path": slim_route, "source": out_path}
                                     }
                                 }
                             }
@@ -2363,7 +2364,7 @@ for code_file in CODE_FILES {
                                 wp_key := "ANY|" + wp_path + "|" + path
                                 if has_key(ROUTE_SEEN, wp_key) == 0 {
                                     ROUTE_SEEN[wp_key] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": wp_path, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": wp_path, "source": out_path}
                                 }
                             }
                         }
@@ -2374,7 +2375,7 @@ for code_file in CODE_FILES {
                                 php_attr_key := "ANY|" + php_attr_route + "|" + path
                                 if has_key(ROUTE_SEEN, php_attr_key) == 0 {
                                     ROUTE_SEEN[php_attr_key] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": php_attr_route, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": php_attr_route, "source": out_path}
                                 }
                             }
                         }
@@ -2396,7 +2397,7 @@ for code_file in CODE_FILES {
                                 ajax_key := "POST|" + ajax_path + "|" + path
                                 if has_key(ROUTE_SEEN, ajax_key) == 0 {
                                     ROUTE_SEEN[ajax_key] := true
-                                    ROUTES := push(ROUTES, {"method": "POST", "path": ajax_path, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "POST", "path": ajax_path, "source": out_path}
                                 }
                             }
                         }
@@ -2418,7 +2419,7 @@ for code_file in CODE_FILES {
                                 admin_key := "ANY|" + admin_path + "|" + path
                                 if has_key(ROUTE_SEEN, admin_key) == 0 {
                                     ROUTE_SEEN[admin_key] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": admin_path, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": admin_path, "source": out_path}
                                 }
                             }
                         }
@@ -2431,7 +2432,7 @@ for code_file in CODE_FILES {
                                 route_key4 := "ANY|" + rust_route + "|" + path
                                 if has_key(ROUTE_SEEN, route_key4) == 0 {
                                     ROUTE_SEEN[route_key4] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": rust_route, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": rust_route, "source": out_path}
                                 }
                             }
                         }
@@ -2445,7 +2446,7 @@ for code_file in CODE_FILES {
                                     route_key6 := go_m + "|" + go_route + "|" + path
                                     if has_key(ROUTE_SEEN, route_key6) == 0 {
                                         ROUTE_SEEN[route_key6] := true
-                                        ROUTES := push(ROUTES, {"method": go_m, "path": go_route, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": go_m, "path": go_route, "source": out_path}
                                     }
                                 }
                             }
@@ -2457,7 +2458,7 @@ for code_file in CODE_FILES {
                                 route_key7 := "ANY|" + go_route2 + "|" + path
                                 if has_key(ROUTE_SEEN, route_key7) == 0 {
                                     ROUTE_SEEN[route_key7] := true
-                                    ROUTES := push(ROUTES, {"method": "ANY", "path": go_route2, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": "ANY", "path": go_route2, "source": out_path}
                                 }
                             }
                         }
@@ -2473,7 +2474,7 @@ for code_file in CODE_FILES {
                                     route_key8 := jvm_method + "|" + jvm_path + "|" + path
                                     if has_key(ROUTE_SEEN, route_key8) == 0 {
                                         ROUTE_SEEN[route_key8] := true
-                                        ROUTES := push(ROUTES, {"method": jvm_method, "path": jvm_path, "source": out_path})
+                                        ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": jvm_method, "path": jvm_path, "source": out_path}
                                     }
                                 }
                             }
@@ -2527,7 +2528,7 @@ for code_file in CODE_FILES {
                                 route_key5 := route_method + "|" + route_path + "|" + path
                                 if has_key(ROUTE_SEEN, route_key5) == 0 {
                                     ROUTE_SEEN[route_key5] := true
-                                    ROUTES := push(ROUTES, {"method": route_method, "path": route_path, "source": out_path})
+                                    ROUTE_RECORDS[len(ROUTE_RECORDS)] := {"method": route_method, "path": route_path, "source": out_path}
                                 }
                             }
                         }
@@ -2602,10 +2603,10 @@ for code_file in CODE_FILES {
         }
     }
 
-    if len(DEPENDENCIES) > MAX_ANALYSIS_RESULTS {
+    if len(DEP_RECORDS) > MAX_ANALYSIS_RESULTS {
         limit_error("SCOUT-LIMIT-DEPENDENCIES", "dependency result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
     }
-    if len(ROUTES) > MAX_ANALYSIS_RESULTS {
+    if len(ROUTE_RECORDS) > MAX_ANALYSIS_RESULTS {
         limit_error("SCOUT-LIMIT-ROUTES", "route result limit exceeded: " + to_string(MAX_ANALYSIS_RESULTS))
     }
     if SECURITY_FINDINGS_TOTAL > MAX_ANALYSIS_RESULTS {
@@ -2675,13 +2676,13 @@ if METRICS_ENABLED {
     METRICS["largest_files"] := largest_files_out
 }
 
-DEPENDENCIES := sort_dependencies(DEPENDENCIES)
-ROUTES := sort_routes(ROUTES)
+DEPENDENCIES := sort_dependencies(values(DEP_RECORDS))
+ROUTES := sort_routes(values(ROUTE_RECORDS))
 SECURITY_FINDINGS := sort_security_findings(SECURITY_FINDINGS)
 LANGUAGE_KEYS_SORTED := sort_strings_asc(keys(METRICS["languages"]))
 
 FILE_TREE_MD := ""
-if OUTPUT_PROFILE == "full" {
+if BUILD_FILE_TREE {
     FILE_TREE_MD := join(TREE_LINES, "\n") + "\n"
 }
 
