@@ -1,53 +1,64 @@
-# Stable bottom-up merge sort. Keys are computed once per input record.
-# Comparison count is O(n log n); input arrays and equal-key order are preserved.
-func sort_keyed(items, kind) {
-    values := []
-    for item in items {
-        key := item
-        if kind == "dependency" {
-            key := dependency_sort_key(item)
-        }
-        if kind == "route" {
-            key := route_sort_key(item)
-        }
-        values := push(values, {"key": key, "value": item})
+# Native string sorting preserves the existing composite-key ordering.
+# Distinct records can share a key (for example when a path contains "|").
+func sort_records(items, key_for) {
+    if len(items) < 2 {
+        return items
     }
+
+    groups := {}
+    for item in items {
+        key := key_for(item)
+        if has_key(groups, key) {
+            groups[key] := push(groups[key], item)
+        } else {
+            groups[key] := [item]
+        }
+    }
+
+    # Kujo's values() traverses string-keyed dictionaries in sorted key order.
+    return flatten(values(groups))
+}
+
+# Security findings have a multi-field comparator with a numeric line number.
+func sort_security_findings(items) {
+    if len(items) < 2 {
+        return items
+    }
+
+    values := items
+    merged := range(0, len(items))
     width := 1
     while width < len(values) {
-        merged := []
         start := 0
         while start < len(values) {
             middle := min(start + width, len(values))
             end := min(start + width + width, len(values))
             left := start
             right := middle
+            index := start
             while left < middle || right < end {
                 take_left := right >= end
                 if left < middle && right < end {
-                    if kind == "security" {
-                        take_left := !security_finding_after(values[left]["value"], values[right]["value"])
-                    } else {
-                        take_left := values[left]["key"] <= values[right]["key"]
-                    }
+                    take_left := !security_finding_after(values[left], values[right])
                 }
                 if take_left {
-                    merged := push(merged, values[left])
+                    merged[index] := values[left]
                     left := left + 1
                 } else {
-                    merged := push(merged, values[right])
+                    merged[index] := values[right]
                     right := right + 1
                 }
+                index := index + 1
             }
             start := end
         }
+        previous := values
         values := merged
+        merged := previous
+        previous := []
         width := width * 2
     }
-    result := []
-    for entry in values {
-        result := push(result, entry["value"])
-    }
-    return result
+    return values
 }
 
 func dependency_sort_key(dep) {
@@ -69,10 +80,6 @@ func security_severity_rank(severity) {
         return "2"
     }
     return "3"
-}
-
-func security_sort_key(finding) {
-    return security_severity_rank(to_string(finding["severity"])) + "|" + to_string(finding["file"]) + "|" + to_string(finding["line"])
 }
 
 func security_finding_after(left, right) {
@@ -98,19 +105,15 @@ func security_finding_after(left, right) {
 }
 
 func sort_strings_asc(items) {
-    return sort_keyed(items, "string")
+    return sort(items)
 }
 
 func sort_dependencies(items) {
-    return sort_keyed(items, "dependency")
+    return sort_records(items, dependency_sort_key)
 }
 
 func sort_routes(items) {
-    return sort_keyed(items, "route")
-}
-
-func sort_security_findings(items) {
-    return sort_keyed(items, "security")
+    return sort_records(items, route_sort_key)
 }
 
 export sort_strings_asc := sort_strings_asc

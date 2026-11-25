@@ -54,4 +54,15 @@ if ! diff -u "$readme_a" "$readme_b" >/dev/null; then
 	exit 1
 fi
 
+(cd "$REPO_ROOT" && "$KUJO_BIN" run tests/fixtures/performance/sort_order.kujo) |
+	jq -e '
+		.strings == ["Z", "z", "é"] and
+		[.routes[].path] == ["/Z", "/a|/b", "/a"] and
+		[.dependencies[].module] == ["Z", "a|b", "a"] and
+		[.findings[] | [.severity, .line, .label, .snippet]] ==
+			[["critical", 20, "c", null], ["high", 2, "a", null], ["high", 2, "b", null],
+			["high", 10, "a", "first"], ["high", 10, "a", "second"]] and
+		.inputs_preserved
+	' >/dev/null
+
 echo "ARC-007 deterministic ordering regression test passed"

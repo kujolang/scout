@@ -1,0 +1,32 @@
+from lib.sorting import sort_dependencies, sort_routes, sort_security_findings, sort_strings_asc
+
+routes := [
+    {"method": "GET", "path": "/a|/b", "source": "file.py"},
+    {"method": "GET", "path": "/a", "source": "/b|file.py"},
+    {"method": "GET", "path": "/Z", "source": "file.py"}
+]
+dependencies := [
+    {"module": "a|b", "type": "c", "source": "file.py"},
+    {"module": "a", "type": "b|c", "source": "file.py"},
+    {"module": "Z", "type": "c", "source": "file.py"}
+]
+findings := [
+    {"severity": "high", "file": "a.py", "line": 10, "label": "a", "snippet": "first"},
+    {"severity": "high", "file": "a.py", "line": 2, "label": "b"},
+    {"severity": "high", "file": "a.py", "line": 10, "label": "a", "snippet": "second"},
+    {"severity": "critical", "file": "z.py", "line": 20, "label": "c"},
+    {"severity": "high", "file": "a.py", "line": 2, "label": "a"}
+]
+
+sorted_routes := sort_routes(routes)
+sorted_dependencies := sort_dependencies(dependencies)
+sorted_findings := sort_security_findings(findings)
+inputs_preserved := routes[0]["path"] == "/a|/b" && dependencies[0]["module"] == "a|b" && findings[0]["snippet"] == "first"
+
+print(to_json({
+    "strings": sort_strings_asc(["é", "z", "Z"]),
+    "routes": sorted_routes,
+    "dependencies": sorted_dependencies,
+    "findings": sorted_findings,
+    "inputs_preserved": inputs_preserved
+}))
