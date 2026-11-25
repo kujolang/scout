@@ -14,8 +14,16 @@ For the next prioritized implementation queue, see
 - [x] PORT-001: Run the portable route, security-export, and artifact contract subset natively on Windows.
 - [x] REL-004: Deterministically regenerate and verify the Linux CPython 3.12 schema wheel hash lock.
 - [x] UX-001: Emit stable identifiers for every fail-closed resource ceiling.
+- [x] PERF-005: Reduce route and dependency accumulation, sorting, and discovery costs while preserving deterministic scan artifacts.
 
 ## Work Log
+
+### 2026-11-25 — PERF-005
+
+- Accumulate route and dependency records by discovery index and use native key ordering for the final record groups.
+- Reuse merge buffers for security findings. Keep equal-key records stable and compare line numbers numerically.
+- Classify each filename by its final dotted suffix and build the file tree only in full-profile scans.
+- Cover equal composite keys, finding ties, dotfiles, compound extensions, and full/minimal parity in ARC-007 and ARC-001. See the [performance audit](audits/performance-hardening-2026-11-25.md) for the measured results.
 
 ### 2026-09-07 — HARD-001
 

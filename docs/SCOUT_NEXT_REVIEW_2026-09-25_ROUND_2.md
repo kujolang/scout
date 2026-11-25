@@ -5,10 +5,9 @@ opportunities; none is a known release blocker.
 
 ## Next-session queue
 
-1. **PERF-005 — Reduce collection and sorting cost.** Prototype chunked result
-   accumulation or a runtime-supported mutable builder, then compare it against the
-   route-hotspot receipt and full performance gate. Accept only byte-equivalent output
-   with improvements outside measurement noise.
+1. **PERF-005 — Complete.** Scout uses indexed result accumulation and native key
+   ordering. See the [performance audit](audits/performance-hardening-2026-11-25.md)
+   for the before/after evidence and output comparison.
 2. **QUAL-003 — Cover multiline and composed declarations.** Add explicit parser
    capabilities (or documented diagnostics) for multiline route declarations, dynamic
    prefixes, and framework router composition without weakening literal precision.

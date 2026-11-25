@@ -1,0 +1,669 @@
+{
+  "candidate_fast_gate": {
+    "host": "Darwin",
+    "measurements": {
+      "large_source": {
+        "artifact_count": 4,
+        "child_cpu_seconds": 0.146,
+        "dependencies": 2,
+        "diagnostics": 2,
+        "elapsed_seconds": 0.361,
+        "fixture_sha256": "71d2f4c8c7ce3da4aa17a99680f81e16b5b49dba04f44f756be67ba393ff8699",
+        "peak_rss_bytes": 27136000,
+        "report_bytes": 2948,
+        "routes": 0,
+        "source_bytes": 2097182,
+        "source_files": 2
+      },
+      "many_files": {
+        "artifact_count": 4,
+        "child_cpu_seconds": 0.263,
+        "dependencies": 32,
+        "diagnostics": 0,
+        "elapsed_seconds": 1.15,
+        "fixture_sha256": "92fa0a07e69634a045013eb331d215fef9fcedc488db09653c5b515e12c656c2",
+        "peak_rss_bytes": 19746816,
+        "report_bytes": 9016,
+        "routes": 32,
+        "source_bytes": 1132,
+        "source_files": 32
+      },
+      "route_heavy": {
+        "artifact_count": 4,
+        "child_cpu_seconds": 0.197,
+        "dependencies": 32,
+        "diagnostics": 0,
+        "elapsed_seconds": 0.707,
+        "fixture_sha256": "55da32744b512613d7bf042c951e4830f965d1a15ecb3bd6877f1e7d4586b4db",
+        "peak_rss_bytes": 19689472,
+        "report_bytes": 8933,
+        "routes": 32,
+        "source_bytes": 1312,
+        "source_files": 4
+      }
+    },
+    "mode": "fast",
+    "note": "Portable regression ceilings, not latency service-level guarantees.",
+    "runtime_version": "kujo 1.5.0",
+    "target_contract": "scout-performance-regression-v1",
+    "target_evaluations": {
+      "large_source": {
+        "checks": {
+          "elapsed_seconds": true,
+          "peak_rss_bytes": true,
+          "report_bytes": true
+        },
+        "limits": {
+          "max_elapsed_seconds": 10,
+          "max_peak_rss_bytes": 268435456,
+          "max_report_bytes": 2097152
+        },
+        "passed": true
+      },
+      "many_files": {
+        "checks": {
+          "elapsed_seconds": true,
+          "peak_rss_bytes": true,
+          "report_bytes": true
+        },
+        "limits": {
+          "max_elapsed_seconds": 10,
+          "max_peak_rss_bytes": 268435456,
+          "max_report_bytes": 2097152
+        },
+        "passed": true
+      },
+      "route_heavy": {
+        "checks": {
+          "elapsed_seconds": true,
+          "peak_rss_bytes": true,
+          "report_bytes": true
+        },
+        "limits": {
+          "max_elapsed_seconds": 10,
+          "max_peak_rss_bytes": 268435456,
+          "max_report_bytes": 2097152
+        },
+        "passed": true
+      }
+    },
+    "targets_passed": true,
+    "tool": "scout-large-benchmark-v2"
+  },
+  "contract": "scout-performance-hardening-v1",
+  "equivalence_and_microbenchmarks": {
+    "baseline_ref": "f3a874fa0e95e26c52ef9ec4d23b0f52d8372089",
+    "candidate_ref": "657209d0719d9f8839953a588f47fffdb85b683f",
+    "cases": {
+      "after-scan-full": {
+        "median_cpu_seconds": 0.843592,
+        "median_wall_seconds": 2.074044,
+        "samples": [
+          {
+            "artifact_bytes": 14345,
+            "cpu_seconds": 0.843592,
+            "llms_bytes": 287,
+            "stdout_bytes": 511,
+            "stdout_lines": 9,
+            "wall_seconds": 2.368347
+          },
+          {
+            "artifact_bytes": 14345,
+            "cpu_seconds": 0.835641,
+            "llms_bytes": 287,
+            "stdout_bytes": 511,
+            "stdout_lines": 9,
+            "wall_seconds": 1.989993
+          },
+          {
+            "artifact_bytes": 14345,
+            "cpu_seconds": 0.864522,
+            "llms_bytes": 287,
+            "stdout_bytes": 511,
+            "stdout_lines": 9,
+            "wall_seconds": 2.074044
+          }
+        ]
+      },
+      "after-scan-minimal": {
+        "median_cpu_seconds": 0.855023,
+        "median_wall_seconds": 2.844427,
+        "samples": [
+          {
+            "artifact_bytes": 13262,
+            "cpu_seconds": 0.836106,
+            "llms_bytes": 287,
+            "stdout_bytes": 520,
+            "stdout_lines": 9,
+            "wall_seconds": 2.055267
+          },
+          {
+            "artifact_bytes": 13262,
+            "cpu_seconds": 0.855023,
+            "llms_bytes": 287,
+            "stdout_bytes": 520,
+            "stdout_lines": 9,
+            "wall_seconds": 2.844427
+          },
+          {
+            "artifact_bytes": 13262,
+            "cpu_seconds": 0.868377,
+            "llms_bytes": 287,
+            "stdout_bytes": 520,
+            "stdout_lines": 9,
+            "wall_seconds": 2.900126
+          }
+        ]
+      },
+      "after-sort512": {
+        "median_cpu_seconds": 1.06331,
+        "median_wall_seconds": 3.417345,
+        "samples": [
+          {
+            "cpu_seconds": 1.06331,
+            "sort_ms": 154,
+            "stdout_bytes": 26545,
+            "stdout_lines": 1,
+            "wall_seconds": 4.072864
+          },
+          {
+            "cpu_seconds": 1.097398,
+            "sort_ms": 41,
+            "stdout_bytes": 26544,
+            "stdout_lines": 1,
+            "wall_seconds": 3.417345
+          },
+          {
+            "cpu_seconds": 1.036449,
+            "sort_ms": 80,
+            "stdout_bytes": 26544,
+            "stdout_lines": 1,
+            "wall_seconds": 2.668475
+          }
+        ]
+      },
+      "before-scan-full": {
+        "median_cpu_seconds": 0.856576,
+        "median_wall_seconds": 2.211544,
+        "samples": [
+          {
+            "artifact_bytes": 14348,
+            "cpu_seconds": 0.856576,
+            "llms_bytes": 287,
+            "stdout_bytes": 513,
+            "stdout_lines": 9,
+            "wall_seconds": 2.194299
+          },
+          {
+            "artifact_bytes": 14348,
+            "cpu_seconds": 0.887059,
+            "llms_bytes": 287,
+            "stdout_bytes": 513,
+            "stdout_lines": 9,
+            "wall_seconds": 2.619333
+          },
+          {
+            "artifact_bytes": 14348,
+            "cpu_seconds": 0.851533,
+            "llms_bytes": 287,
+            "stdout_bytes": 513,
+            "stdout_lines": 9,
+            "wall_seconds": 2.211544
+          }
+        ]
+      },
+      "before-scan-minimal": {
+        "median_cpu_seconds": 0.885498,
+        "median_wall_seconds": 2.861276,
+        "samples": [
+          {
+            "artifact_bytes": 13265,
+            "cpu_seconds": 0.885498,
+            "llms_bytes": 287,
+            "stdout_bytes": 522,
+            "stdout_lines": 9,
+            "wall_seconds": 2.861276
+          },
+          {
+            "artifact_bytes": 13265,
+            "cpu_seconds": 0.867112,
+            "llms_bytes": 287,
+            "stdout_bytes": 522,
+            "stdout_lines": 9,
+            "wall_seconds": 2.609666
+          },
+          {
+            "artifact_bytes": 13265,
+            "cpu_seconds": 0.894462,
+            "llms_bytes": 287,
+            "stdout_bytes": 522,
+            "stdout_lines": 9,
+            "wall_seconds": 3.421984
+          }
+        ]
+      },
+      "before-sort512": {
+        "median_cpu_seconds": 1.775117,
+        "median_wall_seconds": 6.703055,
+        "samples": [
+          {
+            "cpu_seconds": 1.702973,
+            "sort_ms": 2412,
+            "stdout_bytes": 26546,
+            "stdout_lines": 1,
+            "wall_seconds": 6.708931
+          },
+          {
+            "cpu_seconds": 1.883434,
+            "sort_ms": 3080,
+            "stdout_bytes": 26546,
+            "stdout_lines": 1,
+            "wall_seconds": 6.703055
+          },
+          {
+            "cpu_seconds": 1.775117,
+            "sort_ms": 1991,
+            "stdout_bytes": 26546,
+            "stdout_lines": 1,
+            "wall_seconds": 5.300643
+          }
+        ]
+      }
+    },
+    "equivalence": "exact sorting and context documents match; normalized intelligence matches across versions and repeated scans",
+    "platform": "macOS-26.6.2-x86_64-i386-64bit",
+    "runtime": "kujo 1.5.0",
+    "runtime_binary_sha256": "3e1e475ea165c8b4a714495596fe8661ad970b27119ad44f1db4d9779f7f05d4",
+    "samples_per_case": 3,
+    "source_sha256": {
+      "after": {
+        "config.json": "54fdab3741ae122bd3c77c8726303e3521a66f661af83c2c886bf30886a468cc",
+        "lib/path_filters.kujo": "815df4d7531c3b1b325ffea2daf28a304341268fed4865be3ee3e08a971d1826",
+        "lib/scout_runtime.kujo": "58d4ceeac32d13ced33a66fef0c90482112f53c5ff58e151094f751d5df73f13",
+        "lib/security_exports.kujo": "5f4efe409ac422d2c5529d516570832cc42c40a9e9576ddb4c97545832f6209a",
+        "lib/sorting.kujo": "894733a34f8b143d8f9a6e93f7da8170eb3202daedcce94a94fbdc584dd1fdfb",
+        "lib/text_scan.kujo": "b0af04255e3fd1e3f4eca227450ed6a61f9cd59736bbcbd380889d5a1479bc90",
+        "scout.kujo": "1e0f4aa15b80fc5689132783261d00bb551ef79d5eed56aaa9cffef97c9e3e87"
+      },
+      "before": {
+        "config.json": "54fdab3741ae122bd3c77c8726303e3521a66f661af83c2c886bf30886a468cc",
+        "lib/path_filters.kujo": "815df4d7531c3b1b325ffea2daf28a304341268fed4865be3ee3e08a971d1826",
+        "lib/scout_runtime.kujo": "9dcfc45d1ea60c0c25f255beb702144cb10995de99019ef23ea5f59f327f81d0",
+        "lib/security_exports.kujo": "5f4efe409ac422d2c5529d516570832cc42c40a9e9576ddb4c97545832f6209a",
+        "lib/sorting.kujo": "e0a0fbfbc9befa6564870f84d580cde65d95804e18f8aebf809ea15ab9e68465",
+        "lib/text_scan.kujo": "b0af04255e3fd1e3f4eca227450ed6a61f9cd59736bbcbd380889d5a1479bc90",
+        "scout.kujo": "1e0f4aa15b80fc5689132783261d00bb551ef79d5eed56aaa9cffef97c9e3e87"
+      }
+    }
+  },
+  "full_gate": {
+    "after": {
+      "host": "Darwin",
+      "measurements": {
+        "large_source": {
+          "artifact_count": 4,
+          "child_cpu_seconds": 0.22,
+          "dependencies": 2,
+          "diagnostics": 2,
+          "elapsed_seconds": 0.686,
+          "fixture_sha256": "e683c3601eee4ddad1b365aeff58747a1d3366d498e0d6842ac96c611209729e",
+          "peak_rss_bytes": 43220992,
+          "report_bytes": 2954,
+          "routes": 0,
+          "source_bytes": 67108894,
+          "source_files": 2
+        },
+        "many_files": {
+          "artifact_count": 4,
+          "child_cpu_seconds": 6.332,
+          "dependencies": 1024,
+          "diagnostics": 0,
+          "elapsed_seconds": 30.994,
+          "fixture_sha256": "5290f70263d177b8d1208ed0f1e7a7df206bfdb688cce8b10b3ac2d1e4495bd2",
+          "peak_rss_bytes": 55418880,
+          "report_bytes": 186434,
+          "routes": 1024,
+          "source_bytes": 38740,
+          "source_files": 1024
+        },
+        "route_heavy": {
+          "artifact_count": 4,
+          "child_cpu_seconds": 8.602,
+          "dependencies": 2048,
+          "diagnostics": 0,
+          "elapsed_seconds": 26.801,
+          "fixture_sha256": "f66d153e7681fcc3e731f130e84e05cb5d73813126b6ad0f4626052b87c85a15",
+          "peak_rss_bytes": 75468800,
+          "report_bytes": 401118,
+          "routes": 2048,
+          "source_bytes": 90240,
+          "source_files": 32
+        }
+      },
+      "mode": "full",
+      "note": "Portable regression ceilings, not latency service-level guarantees.",
+      "runtime_version": "kujo 1.5.0",
+      "target_contract": "scout-performance-regression-v1",
+      "target_evaluations": {
+        "large_source": {
+          "checks": {
+            "elapsed_seconds": true,
+            "peak_rss_bytes": true,
+            "report_bytes": true
+          },
+          "limits": {
+            "max_elapsed_seconds": 15,
+            "max_peak_rss_bytes": 536870912,
+            "max_report_bytes": 16777216
+          },
+          "passed": true
+        },
+        "many_files": {
+          "checks": {
+            "elapsed_seconds": true,
+            "peak_rss_bytes": true,
+            "report_bytes": true
+          },
+          "limits": {
+            "max_elapsed_seconds": 75,
+            "max_peak_rss_bytes": 536870912,
+            "max_report_bytes": 16777216
+          },
+          "passed": true
+        },
+        "route_heavy": {
+          "checks": {
+            "elapsed_seconds": true,
+            "peak_rss_bytes": true,
+            "report_bytes": true
+          },
+          "limits": {
+            "max_elapsed_seconds": 90,
+            "max_peak_rss_bytes": 536870912,
+            "max_report_bytes": 16777216
+          },
+          "passed": true
+        }
+      },
+      "targets_passed": true,
+      "tool": "scout-large-benchmark-v2"
+    },
+    "before": {
+      "host": "Darwin",
+      "measurements": {
+        "large_source": {
+          "artifact_count": 4,
+          "child_cpu_seconds": 0.202,
+          "dependencies": 2,
+          "diagnostics": 2,
+          "elapsed_seconds": 0.58,
+          "fixture_sha256": "e683c3601eee4ddad1b365aeff58747a1d3366d498e0d6842ac96c611209729e",
+          "peak_rss_bytes": 43098112,
+          "report_bytes": 2954,
+          "routes": 0,
+          "source_bytes": 67108894,
+          "source_files": 2
+        },
+        "many_files": {
+          "artifact_count": 4,
+          "child_cpu_seconds": 18.549,
+          "dependencies": 1024,
+          "diagnostics": 0,
+          "elapsed_seconds": 85.585,
+          "fixture_sha256": "5290f70263d177b8d1208ed0f1e7a7df206bfdb688cce8b10b3ac2d1e4495bd2",
+          "peak_rss_bytes": 56524800,
+          "report_bytes": 186434,
+          "routes": 1024,
+          "source_bytes": 38740,
+          "source_files": 1024
+        },
+        "route_heavy": {
+          "artifact_count": 4,
+          "child_cpu_seconds": 44.622,
+          "dependencies": 2048,
+          "diagnostics": 0,
+          "elapsed_seconds": 129.629,
+          "fixture_sha256": "f66d153e7681fcc3e731f130e84e05cb5d73813126b6ad0f4626052b87c85a15",
+          "peak_rss_bytes": 68743168,
+          "report_bytes": 401118,
+          "routes": 2048,
+          "source_bytes": 90240,
+          "source_files": 32
+        }
+      },
+      "mode": "full",
+      "note": "Portable regression ceilings, not latency service-level guarantees.",
+      "runtime_version": "kujo 1.5.0",
+      "target_contract": "scout-performance-regression-v1",
+      "target_evaluations": {
+        "large_source": {
+          "checks": {
+            "elapsed_seconds": true,
+            "peak_rss_bytes": true,
+            "report_bytes": true
+          },
+          "limits": {
+            "max_elapsed_seconds": 15,
+            "max_peak_rss_bytes": 536870912,
+            "max_report_bytes": 16777216
+          },
+          "passed": true
+        },
+        "many_files": {
+          "checks": {
+            "elapsed_seconds": false,
+            "peak_rss_bytes": true,
+            "report_bytes": true
+          },
+          "limits": {
+            "max_elapsed_seconds": 75,
+            "max_peak_rss_bytes": 536870912,
+            "max_report_bytes": 16777216
+          },
+          "passed": false
+        },
+        "route_heavy": {
+          "checks": {
+            "elapsed_seconds": false,
+            "peak_rss_bytes": true,
+            "report_bytes": true
+          },
+          "limits": {
+            "max_elapsed_seconds": 90,
+            "max_peak_rss_bytes": 536870912,
+            "max_report_bytes": 16777216
+          },
+          "passed": false
+        }
+      },
+      "targets_passed": false,
+      "tool": "scout-large-benchmark-v2"
+    }
+  },
+  "route_profiles": {
+    "after": [
+      {
+        "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+        "output_equivalent": true,
+        "phases": {
+          "array_rebuilding": {
+            "elapsed_ms": 5857.258,
+            "method": "isolated repeated push"
+          },
+          "full_scan": {
+            "elapsed_seconds": 4.49,
+            "report_bytes": 53030
+          },
+          "quick_scan": {
+            "elapsed_seconds": 5.032,
+            "report_bytes": 51937
+          },
+          "report_assembly_proxy": {
+            "additional_bytes": 1093,
+            "elapsed_seconds": 0.0,
+            "method": "full scan minus output-equivalent quick scan"
+          },
+          "sorting": {
+            "elapsed_ms": 48.856,
+            "method": "isolated sort_routes after accumulation"
+          }
+        },
+        "routes": 512,
+        "runtime_version": "kujo 1.5.0",
+        "tool": "scout-route-hotspot-profile-v1"
+      },
+      {
+        "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+        "output_equivalent": true,
+        "phases": {
+          "array_rebuilding": {
+            "elapsed_ms": 6111.052,
+            "method": "isolated repeated push"
+          },
+          "full_scan": {
+            "elapsed_seconds": 4.656,
+            "report_bytes": 53030
+          },
+          "quick_scan": {
+            "elapsed_seconds": 4.739,
+            "report_bytes": 51937
+          },
+          "report_assembly_proxy": {
+            "additional_bytes": 1093,
+            "elapsed_seconds": 0.0,
+            "method": "full scan minus output-equivalent quick scan"
+          },
+          "sorting": {
+            "elapsed_ms": 142.104,
+            "method": "isolated sort_routes after accumulation"
+          }
+        },
+        "routes": 512,
+        "runtime_version": "kujo 1.5.0",
+        "tool": "scout-route-hotspot-profile-v1"
+      },
+      {
+        "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+        "output_equivalent": true,
+        "phases": {
+          "array_rebuilding": {
+            "elapsed_ms": 6632.007,
+            "method": "isolated repeated push"
+          },
+          "full_scan": {
+            "elapsed_seconds": 4.444,
+            "report_bytes": 53030
+          },
+          "quick_scan": {
+            "elapsed_seconds": 5.239,
+            "report_bytes": 51937
+          },
+          "report_assembly_proxy": {
+            "additional_bytes": 1093,
+            "elapsed_seconds": 0.0,
+            "method": "full scan minus output-equivalent quick scan"
+          },
+          "sorting": {
+            "elapsed_ms": 23.283,
+            "method": "isolated sort_routes after accumulation"
+          }
+        },
+        "routes": 512,
+        "runtime_version": "kujo 1.5.0",
+        "tool": "scout-route-hotspot-profile-v1"
+      }
+    ],
+    "before": [
+      {
+        "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+        "output_equivalent": true,
+        "phases": {
+          "array_rebuilding": {
+            "elapsed_ms": 6172.543,
+            "method": "isolated repeated push"
+          },
+          "full_scan": {
+            "elapsed_seconds": 9.232,
+            "report_bytes": 53030
+          },
+          "quick_scan": {
+            "elapsed_seconds": 9.977,
+            "report_bytes": 51937
+          },
+          "report_assembly_proxy": {
+            "additional_bytes": 1093,
+            "elapsed_seconds": 0.0,
+            "method": "full scan minus output-equivalent quick scan"
+          },
+          "sorting": {
+            "elapsed_ms": 3817.577,
+            "method": "isolated sort_routes after accumulation"
+          }
+        },
+        "routes": 512,
+        "runtime_version": "kujo 1.5.0",
+        "tool": "scout-route-hotspot-profile-v1"
+      },
+      {
+        "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+        "output_equivalent": true,
+        "phases": {
+          "array_rebuilding": {
+            "elapsed_ms": 5161.372,
+            "method": "isolated repeated push"
+          },
+          "full_scan": {
+            "elapsed_seconds": 9.05,
+            "report_bytes": 53030
+          },
+          "quick_scan": {
+            "elapsed_seconds": 8.723,
+            "report_bytes": 51937
+          },
+          "report_assembly_proxy": {
+            "additional_bytes": 1093,
+            "elapsed_seconds": 0.327,
+            "method": "full scan minus output-equivalent quick scan"
+          },
+          "sorting": {
+            "elapsed_ms": 3300.982,
+            "method": "isolated sort_routes after accumulation"
+          }
+        },
+        "routes": 512,
+        "runtime_version": "kujo 1.5.0",
+        "tool": "scout-route-hotspot-profile-v1"
+      },
+      {
+        "interpretation": "The report proxy includes full-mode document generation and publication overhead; timings are evidence, not portable thresholds.",
+        "output_equivalent": true,
+        "phases": {
+          "array_rebuilding": {
+            "elapsed_ms": 5024.295,
+            "method": "isolated repeated push"
+          },
+          "full_scan": {
+            "elapsed_seconds": 9.768,
+            "report_bytes": 53030
+          },
+          "quick_scan": {
+            "elapsed_seconds": 9.611,
+            "report_bytes": 51937
+          },
+          "report_assembly_proxy": {
+            "additional_bytes": 1093,
+            "elapsed_seconds": 0.157,
+            "method": "full scan minus output-equivalent quick scan"
+          },
+          "sorting": {
+            "elapsed_ms": 3569.895,
+            "method": "isolated sort_routes after accumulation"
+          }
+        },
+        "routes": 512,
+        "runtime_version": "kujo 1.5.0",
+        "tool": "scout-route-hotspot-profile-v1"
+      }
+    ]
+  }
+}

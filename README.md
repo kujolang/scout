@@ -298,8 +298,8 @@ python3 tests/scripts/benchmark_large_scans.py --kujo /path/to/kujo \
 The script generates deterministic temporary many-file, route-heavy, and large-source
 workloads, validates their output counts, records wall time, child CPU, peak
 resident memory, and report bytes, and enforces portable regression ceilings.
-See the checked-in [measurement receipt](docs/audits/artifacts/large-scan-benchmark.json)
-for one host. The ceilings are release regression gates, not latency SLAs.
+These ceilings are release regression gates. For measured Scout changes and
+output-equivalence checks, see the [performance hardening audit](docs/audits/performance-hardening-2026-11-25.md).
 
 The labeled analysis corpus has its own exact-match precision/recall gate:
 
