@@ -22,6 +22,8 @@ sources = ["lib", "."]
 includes = ["README.md", "docs", "tests", "examples", "config.json"]
 excludes = [".git", "results", "tests/tmp", "node_modules", "dist", "build"]
 
+[dependencies]
+
 [build]
 command = ""
 output = "dist"
