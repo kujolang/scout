@@ -24,7 +24,7 @@ Both revisions ran on the same shared Darwin x86-64 host with Kujo 1.5.0 (binary
 | 32 files, 2,048 routes | 44.622 → 8.602 s (81% less) | 129.629 → 26.801 s | 65.6 → 72.0 MiB | 401,118 |
 | Two 32 MiB source files | 0.202 → 0.220 s | 0.580 → 0.686 s | 41.1 → 41.2 MiB | 2,954 |
 
-The route-heavy workload used about 10% more peak memory and stayed within the existing ceiling. The bounded large-source scan is a control with no material claim based on its single sample. Build size and token counts were outside the measured scope.
+The route-heavy workload used about 10% more peak memory and stayed within the existing ceiling. The [peak memory follow-up](route-memory-2026-11-26.md) measures the fix against both revisions. The bounded large-source scan is a control with no material claim based on its single sample. Build size and token counts were outside the measured scope.
 
 Three repeated comparison scans on a separate 64-route fixture produced exactly the same context documents and normalized intelligence on both revisions. The 512-record sort produced the same ordered records every time. Its median isolated sort time fell from 2,412 ms (1,991–3,080 ms) to 80 ms (41–154 ms). The aggregate suite independently checks golden documents, schemas, and analyzer behavior. The [measurement receipt](artifacts/performance-hardening-2026-11-25.json) preserves the individual results and fixture hashes.
 
