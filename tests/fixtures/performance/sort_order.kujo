@@ -1,8 +1,9 @@
 from lib.sorting import sort_dependencies, sort_routes, sort_security_findings, sort_strings_asc
 
 routes := [
-    {"method": "GET", "path": "/a|/b", "source": "file.py"},
-    {"method": "GET", "path": "/a", "source": "/b|file.py"},
+    {"method": "GET", "path": "/a|/b|/c", "source": "file.py"},
+    {"method": "GET", "path": "/a", "source": "/b|/c|file.py"},
+    {"method": "GET", "path": "/a|/b", "source": "/c|file.py"},
     {"method": "GET", "path": "/Z", "source": "file.py"}
 ]
 dependencies := [
@@ -21,7 +22,7 @@ findings := [
 sorted_routes := sort_routes(routes)
 sorted_dependencies := sort_dependencies(dependencies)
 sorted_findings := sort_security_findings(findings)
-inputs_preserved := routes[0]["path"] == "/a|/b" && dependencies[0]["module"] == "a|b" && findings[0]["snippet"] == "first"
+inputs_preserved := routes[0]["path"] == "/a|/b|/c" && dependencies[0]["module"] == "a|b" && findings[0]["snippet"] == "first"
 
 print(to_json({
     "strings": sort_strings_asc(["é", "z", "Z"]),

@@ -2676,8 +2676,15 @@ if METRICS_ENABLED {
     METRICS["largest_files"] := largest_files_out
 }
 
-DEPENDENCIES := sort_dependencies(values(DEP_RECORDS))
-ROUTES := sort_routes(values(ROUTE_RECORDS))
+# Release scan-only maps as soon as their data is finalized.
+DEP_SEEN := {}
+ROUTE_SEEN := {}
+DEPENDENCIES := values(DEP_RECORDS)
+DEP_RECORDS := {}
+DEPENDENCIES := sort_dependencies(DEPENDENCIES)
+ROUTES := values(ROUTE_RECORDS)
+ROUTE_RECORDS := {}
+ROUTES := sort_routes(ROUTES)
 SECURITY_FINDINGS := sort_security_findings(SECURITY_FINDINGS)
 LANGUAGE_KEYS_SORTED := sort_strings_asc(keys(METRICS["languages"]))
 
@@ -2713,8 +2720,12 @@ if !SKIP_DEPS {
         REPORT_LINES := push(REPORT_LINES, "No dependencies detected.")
     }
     if len(DEPENDENCIES) > 0 {
+        # Reserve each section in one append, then replace its slots with Markdown rows.
+        row_index := len(REPORT_LINES)
+        REPORT_LINES := concat(REPORT_LINES, DEPENDENCIES)
         for dep in DEPENDENCIES {
-            REPORT_LINES := push(REPORT_LINES, "- " + markdown_data(dep["module"]) + " (" + markdown_data(dep["type"]) + ")")
+            REPORT_LINES[row_index] := "- " + markdown_data(dep["module"]) + " (" + markdown_data(dep["type"]) + ")"
+            row_index := row_index + 1
         }
     }
 }
@@ -2729,8 +2740,11 @@ if !SKIP_ROUTES {
             md_table_row(["Method", "Path", "Source"]),
             md_table_row(["--------", "------", "--------"])
         ])
+        row_index := len(REPORT_LINES)
+        REPORT_LINES := concat(REPORT_LINES, ROUTES)
         for route in ROUTES {
-            REPORT_LINES := push(REPORT_LINES, md_table_row([markdown_data(route["method"]), "`" + markdown_data(route["path"]) + "`", markdown_data(route["source"])]))
+            REPORT_LINES[row_index] := md_table_row([markdown_data(route["method"]), "`" + markdown_data(route["path"]) + "`", markdown_data(route["source"])])
+            row_index := row_index + 1
         }
     }
 }
@@ -2751,12 +2765,15 @@ if !SKIP_SEC {
             md_table_row(["Severity", "Issue", "File", "Line"]),
             md_table_row(["----------", "-------", "------", "------"])
         ])
+        row_index := len(REPORT_LINES)
+        REPORT_LINES := concat(REPORT_LINES, SECURITY_FINDINGS)
         for finding in SECURITY_FINDINGS {
             finding_label := to_string(finding["label"])
             if has_key(finding, "suppressed") && finding["suppressed"] {
                 finding_label := finding_label + " (suppressed)"
             }
-            REPORT_LINES := push(REPORT_LINES, md_table_row([finding["severity"], markdown_data(finding_label), "`" + markdown_data(finding["file"]) + "`", to_string(finding["line"])]))
+            REPORT_LINES[row_index] := md_table_row([finding["severity"], markdown_data(finding_label), "`" + markdown_data(finding["file"]) + "`", to_string(finding["line"])])
+            row_index := row_index + 1
         }
     }
 }
@@ -2778,6 +2795,7 @@ REPORT_LINES := append_lines(REPORT_LINES, [
 ])
 
 REPORT_MD := join(REPORT_LINES, "\n") + "\n"
+REPORT_LINES := []
 
 LLMS_LINES := []
 LLMS_LINES := append_lines(LLMS_LINES, [

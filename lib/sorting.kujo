@@ -6,17 +6,27 @@ func sort_records(items, key_for) {
     }
 
     groups := {}
+    has_ties := false
     for item in items {
         key := key_for(item)
         if has_key(groups, key) {
-            groups[key] := push(groups[key], item)
+            previous := groups[key]
+            if type(previous) != "array" {
+                previous := [previous]
+            }
+            groups[key] := push(previous, item)
+            has_ties := true
         } else {
-            groups[key] := [item]
+            groups[key] := item
         }
     }
 
     # Kujo's values() traverses string-keyed dictionaries in sorted key order.
-    return flatten(values(groups))
+    ordered := values(groups)
+    if has_ties {
+        return flatten(ordered)
+    }
+    return ordered
 }
 
 # Security findings have a multi-field comparator with a numeric line number.

@@ -57,7 +57,7 @@ fi
 (cd "$REPO_ROOT" && "$KUJO_BIN" run tests/fixtures/performance/sort_order.kujo) |
 	jq -e '
 		.strings == ["Z", "z", "é"] and
-		[.routes[].path] == ["/Z", "/a|/b", "/a"] and
+		[.routes[].path] == ["/Z", "/a|/b|/c", "/a", "/a|/b"] and
 		[.dependencies[].module] == ["Z", "a|b", "a"] and
 		[.findings[] | [.severity, .line, .label, .snippet]] ==
 			[["critical", 20, "c", null], ["high", 2, "a", null], ["high", 2, "b", null],
