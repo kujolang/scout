@@ -2,7 +2,7 @@
 
 from lib.path_filters import basename_from_path, sanitize_slug, normalize_filter_text, pattern_match, any_pattern_match, is_canonical_path_within_target, relative_canonical_path_from_target
 from lib.sorting import sort_strings_asc, sort_dependencies, sort_routes, sort_security_findings
-from lib.security_exports import build_sarif_security_export, build_jsonl_security_export, redact_security_snippet, build_security_fingerprint
+from lib.security_exports import build_sarif_security_export, build_jsonl_security_export, redact_security_snippet, build_security_fingerprint, contains_provider_token
 from lib.text_scan import find_after, first_quoted_value, is_escaped_char, is_inside_quoted_literal, contains_unquoted_call
 
 VERSION := "1.1.0"
@@ -176,7 +176,7 @@ IGNORED_EXTS := {
 }
 
 SECURITY_PATTERNS := [
-    {"match": ["password =", "password=", "secret =", "api_key =", "apikey ="], "label": "Hardcoded credential", "severity": "high"},
+    {"match": ["password =", "password=", "password:", "password\":", "password':", "secret =", "secret=", "api_key =", "api_key=", "apikey =", "apikey="], "label": "Hardcoded credential", "severity": "high"},
     {"match": ["token =", "token=", "auth_token", "access_token", "refresh_token"], "label": "Hardcoded token", "severity": "high"},
     {"match": ["-----BEGIN", "PRIVATE KEY-----"], "label": "Embedded private key", "severity": "critical"},
     {"match": ["eval(", "exec(", "system(", "shell_exec(", "passthru("], "label": "Dangerous code execution function", "severity": "high"},
@@ -2572,6 +2572,9 @@ for code_file in CODE_FILES {
                                 }
                             }
                         }
+                        if !matched && s_pattern["label"] == "Hardcoded token" {
+                            matched := contains_provider_token(trimmed)
+                        }
                         if matched {
                             matched_patterns := push(matched_patterns, s_pattern)
                             sensitive_label := s_pattern["label"]
@@ -2956,10 +2959,10 @@ try {
 }
 
 try {
+    if path_has_entry(STAGING) { error_exit("staging directory already exists") }
     create_dir(STAGING)
 } except err {
     error_exit("unable to create staging directory: " + STAGING)
-    if path_has_entry(STAGING) { error_exit("staging directory already exists") }
 }
 
 if OUTPUT_PROFILE == "full" {
@@ -2979,7 +2982,7 @@ if !SKIP_SEC {
     while export_i < len(SECURITY_EXPORT_FORMATS) {
         active_export_format := SECURITY_EXPORT_FORMATS[export_i]
         if active_export_format == "sarif" {
-            write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/security.sarif", to_json(build_sarif_security_export(SECURITY_FINDINGS, SECURITY_PATTERNS, VERSION)))
+            write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/security.sarif", to_json(build_sarif_security_export(SECURITY_FINDINGS, SECURITY_PATTERNS, VERSION, PATH_MODE)))
             SECURITY_EXPORT_FILES := push(SECURITY_EXPORT_FILES, "security.sarif")
         }
         if active_export_format == "jsonl" {

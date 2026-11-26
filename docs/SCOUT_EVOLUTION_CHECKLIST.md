@@ -16,7 +16,16 @@ For the next prioritized implementation queue, see
 - [x] UX-001: Emit stable identifiers for every fail-closed resource ceiling.
 - [x] PERF-005: Reduce route and dependency accumulation, sorting, and discovery costs while preserving deterministic scan artifacts.
 
+- [x] HARD-004: Enforce rooted publication and bounded input accounting.
+- [x] HARD-005: Protect report display text and preserve SARIF artifact identity.
+
 ## Work Log
+
+### 2026-11-26 — HARD-004 / HARD-005
+
+- Validate baseline shape and byte counts before parsing, and use rooted writes for reports and baselines. Count traversed directory entries and captured source bytes independently of report filtering.
+- Escape Markdown display text and SARIF artifact locations. Redact additional credential forms before constructing findings.
+- Verify the boundaries with the enterprise, publication recovery, bounded-read, and security-redaction scripts. Preserve the existing ordinary report snapshots.
 
 ### 2026-11-25 — PERF-005
 

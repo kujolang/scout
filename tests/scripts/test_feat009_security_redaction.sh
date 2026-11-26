@@ -67,4 +67,22 @@ if grep -Fq 'literal_only = "eval("' "$json_path" || grep -Fq 'const harmless = 
 	exit 1
 fi
 
+mkdir -p "$OUT_ROOT/structured-fixture/src"
+cat > "$OUT_ROOT/structured-fixture/src/café #1.py" <<'PYTHON'
+settings = {"password": "fixture-only-password"}
+ghp_0123456789abcdefghijklmn = "fixture-only"
+PYTHON
+"$KUJO_BIN" run "$REPO_ROOT/scout.kujo" "$OUT_ROOT/structured-fixture" \
+    -o "$OUT_ROOT/structured-output" --quick --security-export sarif --security-export jsonl \
+    > "$OUT_ROOT/structured.log"
+structured_dir="$(sed -n 's/^Output: //p' "$OUT_ROOT/structured.log")"
+jq -e '[.security_findings[].label] | sort == ["Hardcoded credential", "Hardcoded token"]' \
+    "$structured_dir/intelligence.json" >/dev/null
+jq -e '[.runs[0].results[].locations[0].physicalLocation.artifactLocation.uri] | unique == ["src/caf%C3%A9%20%231.py"]' \
+    "$structured_dir/security.sarif" >/dev/null
+if grep -R -Eq 'fixture-only-password|0123456789abcdefghijklmn' "$structured_dir"; then
+    echo "Structured credentials leaked into Scout outputs"
+    exit 1
+fi
+
 echo "FEAT-009 security redaction regression test passed"

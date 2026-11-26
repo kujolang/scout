@@ -60,4 +60,21 @@ $jsonlPath = Get-ChildItem -Path $securityRoot -Recurse -Filter security.jsonl |
 if (-not $jsonlPath) { throw "security.jsonl was not generated" }
 foreach ($line in Get-Content $jsonlPath) { $null = $line | ConvertFrom-Json }
 
+$uriFixture = Join-Path $OutputRoot "uri-fixture"
+$uriOutput = Join-Path $OutputRoot "uri-output"
+New-Item -ItemType Directory -Path $uriFixture | Out-Null
+$sourceFile = Join-Path $uriFixture "café #1.py"
+Set-Content -LiteralPath $sourceFile -Encoding utf8 -Value 'password = "fixture"'
+Invoke-Scout @($uriFixture, "-o", $uriOutput, "--quick", "--strict", "--path-mode", "absolute",
+    "--security-export", "sarif", "--write-baseline", "--baseline", "review/baseline.json")
+$baselinePath = Join-Path $uriFixture "review/baseline.json"
+$baseline = Get-Content -Raw $baselinePath | ConvertFrom-Json
+if ($baseline.fingerprints.Count -ne 1) { throw "Missing rooted baseline" }
+$sarifPath = Get-ChildItem -Path $uriOutput -Recurse -Filter security.sarif | Select-Object -First 1 -ExpandProperty FullName
+$sarif = Get-Content -Raw $sarifPath | ConvertFrom-Json
+$sourceUri = $sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri
+if ($sourceUri -notmatch "^file:///[A-Za-z]:/.*/caf%C3%A9%20%231\.py$") {
+    throw "Unexpected SARIF artifact URI: $sourceUri"
+}
+
 Write-Host "Native Windows Scout contract subset passed"

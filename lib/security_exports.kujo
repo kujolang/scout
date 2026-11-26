@@ -34,7 +34,49 @@ func security_sarif_level(severity) {
     return "note"
 }
 
-func build_sarif_security_export(findings, security_patterns, version) {
+func encode_uri_path(path) {
+    if regex_match(path, "^[A-Za-z0-9._~/-]+$") { return path }
+    unreserved := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~/"
+    hex := "0123456789ABCDEF"
+    encoded := ""
+    for character in split(path, "") {
+        if index_of(unreserved, character) >= 0 {
+            encoded := encoded + character
+        } else {
+            bytes := decode_base64(encode_base64(character))
+            i := 0
+            while i < len(bytes) {
+                high := bytes[i] / 16
+                low := bytes[i] % 16
+                encoded := encoded + "%" + substring(hex, high, high + 1) + substring(hex, low, low + 1)
+                i := i + 1
+            }
+        }
+    }
+    return encoded
+}
+
+func sarif_artifact_uri(file_path, path_mode) {
+    path := to_string(file_path)
+    if path_mode != "absolute" { return encode_uri_path(path) }
+    if starts_with(path, "\\\\?\\UNC\\") {
+        path := "\\\\" + substring(path, 8, len(path))
+    } else if starts_with(path, "\\\\?\\") {
+        path := substring(path, 4, len(path))
+    }
+    if regex_match(path, "^[A-Za-z]:[/\\\\]") {
+        drive := substring(path, 0, 2)
+        tail := replace(substring(path, 2, len(path)), "\\", "/")
+        return "file:///" + drive + encode_uri_path(tail)
+    }
+    if starts_with(path, "\\\\") {
+        return "file:" + encode_uri_path(replace(path, "\\", "/"))
+    }
+    if starts_with(path, "/") { return "file://" + encode_uri_path(path) }
+    return encode_uri_path(path)
+}
+
+func build_sarif_security_export(findings, security_patterns, version, path_mode) {
     sarif_rules := []
     sarif_seen := {}
 
@@ -72,7 +114,7 @@ func build_sarif_security_export(findings, security_patterns, version) {
             "locations": [{
                 "physicalLocation": {
                     "artifactLocation": {
-                        "uri": to_string(finding["file"])
+                        "uri": sarif_artifact_uri(finding["file"], path_mode)
                     },
                     "region": {
                         "startLine": finding["line"],
@@ -129,6 +171,13 @@ func build_jsonl_security_export(findings) {
     return join(jsonl_lines, "\n") + "\n"
 }
 
+func contains_provider_token(text) {
+    if index_of(text, "gh") < 0 && index_of(text, "sk-") < 0 && index_of(text, "sk_live_") < 0 {
+        return false
+    }
+    return regex_match(text, "gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|sk_live_[A-Za-z0-9]{16,}")
+}
+
 func redact_security_snippet(snippet, label) {
     snippet_text := trim(to_string(snippet))
     label_text := to_string(label)
@@ -163,7 +212,7 @@ func redact_security_snippet(snippet, label) {
                     safe_prefix := false
                 }
             }
-            if safe_prefix {
+            if safe_prefix && !contains_provider_token(prefix_name) {
                 return prefix + sep_char + " <redacted>"
             }
         }
@@ -184,6 +233,7 @@ func build_security_fingerprint(file_path, line_number, label, severity, snippet
     return rule_id + "|" + fp_file + "|" + fp_line + "|" + fp_severity + "|" + fp_snippet
 }
 
+export contains_provider_token := contains_provider_token
 export security_rule_id := security_rule_id
 export security_sarif_level := security_sarif_level
 export build_sarif_security_export := build_sarif_security_export

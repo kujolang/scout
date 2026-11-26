@@ -449,7 +449,7 @@ The target must be a directory. Scout checks canonical path components exactly,
 including whitespace, and excludes symlinks resolving outside the target. It scans
 regular files only; named pipes and devices are not source files. Ancestor symlink
 cycles are diagnosed and not traversed. Directory entries
-are sorted so first-source dependency selection and file-tree ordering are repeatable.
+are discovered in sorted pages so first-source dependency selection and file-tree ordering are repeatable. The entry ceiling counts all names enumerated in visited directories, including names filtered from the report.
 
 Unreadable directories, unavailable entries, failed reads, and truncation are reported
 in `intelligence.json.parse_errors`. When diagnostics exist, the CLI prints their count.
@@ -463,8 +463,7 @@ The positive aggregate ceilings are `scan.max_entries`, `scan.max_code_files`,
 `scan.max_total_analyzed_bytes`, `scan.max_analysis_results`, and
 `scan.max_ignore_rules`. Exceeding one fails closed before publication.
 
-The size limit caps the analyzed character prefix and its read budget is at most four
-bytes per character, plus bounded encoding/decoding copies in memory. A non-UTF-8
+The size limit caps the analyzed character prefix at four bytes per character. Scout counts the bytes read toward the aggregate ceiling and uses one lookahead byte to detect a boundary. UTF-8 handling uses that same captured prefix. A non-UTF-8
 sequence inside that prefix yields `read_failed`; text beyond the prefix is not
 validated. A Kujo rooted prefix read opens one regular-file handle beneath the
 trusted target root, preventing a symlink swapped after discovery from making
@@ -476,28 +475,26 @@ snapshot: file contents and metadata can still change while scanning.
 Generated paths and findings are repository data, not trusted instructions for an
 agent to execute. Markdown outputs single-line-normalize and encode repository-derived
 display values. `AGENTS.md` deliberately omits raw routes and paths; exact values remain
-available in JSON.
+available in JSON. SARIF encodes artifact paths as relative URI references or file URIs when absolute paths are requested.
 
 Default and relative baseline/ignore paths must remain beneath the canonical target.
 Explicit absolute paths remain supported as operator-selected inputs. Scout reads both
 forms through Kujo's rooted, bounded regular-file primitive. Baselines are limited to
-4 MiB; ignore files are limited to 256 KiB and the configured rule ceiling.
+4 MiB; ignore files are limited to 256 KiB and the configured rule ceiling. An existing baseline must have a fingerprints array of strings. Scout writes relative baselines through the target root and refuses symlinked parent components.
 
 All findings on a credential, token, or private-key line share a redacted snippet.
-Simple assignment prefixes remain available; complex prefixes are removed. Existing
+Simple assignment names remain available. Scout removes complex prefixes and recognized provider tokens. Existing
 baseline fingerprints for newly redacted multi-rule or complex-prefix findings may need
 to be reviewed and regenerated with `--write-baseline`. Old baselines remain readable.
 Valid JSON manifests use structured parsing exclusively; malformed manifests retain
 best-effort line recovery.
 
-Reports are written into a private staging directory and the whole directory is
-renamed into a unique run directory after its manifest is written. A failed write
+Scout writes reports under a unique staging directory using confined file writes, then renames the directory after writing its manifest. Choose an output root you control. A failed write
 can leave an unpublished `.scout-stage-*` directory under the output root; do not
 consume it as a complete run. A baseline update uses atomic replacement only after
 the report is published, preserving the previous baseline on failed writes. The
 report and baseline are not one atomic transaction; a baseline failure can leave
-a complete published report while the CLI exits nonzero. Avoid concurrent baseline
-writers and consume reports only from published directories with a manifest.
+a complete published report while the CLI exits nonzero. A new baseline is published without overwriting a file that appeared during the scan. Use one writer per baseline and consume reports from published directories with a manifest.
 
 The hardening audit and reproducible benchmark command are in
 [`docs/audits/repository-hardening.md`](docs/audits/repository-hardening.md).

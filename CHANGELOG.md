@@ -10,10 +10,11 @@ This project follows a lightweight variation of Keep a Changelog and semantic ve
 _None yet._
 
 ### Changed
-_None yet._
+- Enumerate directory entries in sorted pages and count actual prefix bytes against scan ceilings.
 
 ### Fixed
-_None yet._
+- Confine report and baseline writes, validate baseline shape, and enforce byte limits before decoding metadata.
+- Keep credential values out of security excerpts, encode Markdown display values, and emit escaped SARIF artifact URIs.
 
 ## [1.1.0] - 2026-09-25
 
