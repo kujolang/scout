@@ -32,4 +32,8 @@ awk 'BEGIN {printf "import pathlib\n"; for (i = 0; i < 500001; i++) printf "😀
 "$KUJO_BIN" run scout.kujo -- "$utf8_target" -o "$output" > tests/tmp/bounded-read/utf8-cut.log
 run_dir="$(awk -F': ' '/^Output: /{print $2}' tests/tmp/bounded-read/utf8-cut.log | tail -n 1)"
 jq -e '.metrics.total_files == 1 and ([.dependencies[].module] | index("pathlib") != null) and ([.parse_errors[].error] | index("truncated_500000b") != null) and ([.parse_errors[].error] | index("read_failed") == null)' "$run_dir/intelligence.json" >/dev/null
+printf 'import pathlib\n\377' > "$utf8_target/multibyte.py"
+"$KUJO_BIN" run scout.kujo -- "$utf8_target" -o "$output" > tests/tmp/bounded-read/invalid-utf8.log
+run_dir="$(awk -F': ' '/^Output: /{print $2}' tests/tmp/bounded-read/invalid-utf8.log | tail -n 1)"
+jq -e '(.dependencies | length == 0) and ([.parse_errors[].error] == ["read_failed"])' "$run_dir/intelligence.json" >/dev/null
 echo "Unicode character limit and UTF-8 boundary passed"

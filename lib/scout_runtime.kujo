@@ -337,41 +337,50 @@ func is_safe_relative_input_path(value) {
     if text == "" || is_absolute_input_path(text) {
         return false
     }
-    normalized := normalize_filter_text(text)
-    if normalized == ".." || starts_with(normalized, "../") || index_of(normalized, "/../") >= 0 {
-        return false
+    normalized := replace(normalize_filter_text(text), "\\", "/")
+    for part in split(normalized, "/") {
+        if part == ".." { return false }
     }
     return true
 }
 
-func decode_utf8_prefix_beneath(root, relative_path, byte_limit) {
-    prefix_bytes := read_binary_prefix_beneath(root, relative_path, byte_limit)
-    decoded := false
-    decoded_text := ""
+func decode_utf8_prefix(prefix, allow_trailing_fragment) {
+    total := len(prefix)
     trim_bytes := 0
-    while trim_bytes < 4 && !decoded {
+    while trim_bytes < 4 && trim_bytes <= total {
         try {
-            if trim_bytes > 0 {
-                prefix_bytes := read_binary_prefix_beneath(root, relative_path, byte_limit - trim_bytes)
-            }
-            decoded_text := decode_base64_utf8(encode_base64(prefix_bytes))
-            decoded := true
+            if trim_bytes == 0 { return decode_base64_utf8(encode_base64(prefix)) }
+            return decode_base64_utf8(encode_base64(slice(prefix, 0, total - trim_bytes)))
         } except err {
+            if !allow_trailing_fragment { throw err }
             trim_bytes := trim_bytes + 1
         }
     }
-    if !decoded {
-        decoded_text := decode_base64_utf8(encode_base64(prefix_bytes))
+    return decode_base64_utf8(encode_base64(prefix))
+}
+
+func read_complete_scan_input(root, relative_path, byte_limit, limit_code, label) {
+    bytes := read_binary_prefix_beneath(root, relative_path, byte_limit + 1)
+    if len(bytes) > byte_limit {
+        limit_error(limit_code, label + " file exceeds " + to_string(byte_limit) + " bytes")
     }
-    return decoded_text
+    return decode_base64_utf8(encode_base64(bytes))
+}
+
+func path_has_entry(path) {
+    if file_exists(path) { return true }
+    try { return path_is_symlink(path) } except err { return false }
 }
 
 func markdown_data(value) {
-    safe := replace(to_string(value), "\r", " ")
+    safe := replace(to_string(value), "&", "&amp;")
+    safe := replace(safe, "\r", " ")
     safe := replace(safe, "\n", " ")
     safe := replace(safe, "\t", " ")
     safe := replace(safe, "`", "'")
     safe := replace(safe, "|", "&#124;")
+    safe := replace(safe, "[", "&#91;")
+    safe := replace(safe, "]", "&#93;")
     safe := replace(safe, "<", "&lt;")
     safe := replace(safe, ">", "&gt;")
     return safe
@@ -866,23 +875,23 @@ if BASELINE_PATH != "" {
 }
 
 BASELINE_FINGERPRINTS := {}
-if !SKIP_SEC && BASELINE_PATH != "" && file_exists(BASELINE_PATH) {
+BASELINE_PRESENT := file_exists(BASELINE_PATH)
+if !SKIP_SEC && BASELINE_PATH != "" && BASELINE_PRESENT {
     try {
-        baseline_text := decode_utf8_prefix_beneath(BASELINE_READ_ROOT, BASELINE_READ_REL, 4194305)
-        if len(baseline_text) > 4194304 {
-            limit_error("SCOUT-LIMIT-BASELINE-BYTES", "baseline file exceeds 4194304 bytes")
-        }
+        baseline_text := read_complete_scan_input(BASELINE_READ_ROOT, BASELINE_READ_REL, 4194304, "SCOUT-LIMIT-BASELINE-BYTES", "baseline")
         baseline_doc := parse_json(baseline_text)
-        if has_key(baseline_doc, "fingerprints") && type(baseline_doc["fingerprints"]) == "array" {
-            baseline_fingerprints := baseline_doc["fingerprints"]
-            baseline_i := 0
-            while baseline_i < len(baseline_fingerprints) {
-                baseline_fp := trim(to_string(baseline_fingerprints[baseline_i]))
-                if baseline_fp != "" {
-                    BASELINE_FINGERPRINTS[baseline_fp] := true
-                }
-                baseline_i := baseline_i + 1
+        if type(baseline_doc) != "dict" || has_key(baseline_doc, "fingerprints") == 0 || type(baseline_doc["fingerprints"]) != "array" {
+            error_exit("invalid baseline file: expected an object with a fingerprints array")
+        }
+        if has_key(baseline_doc, "version") && baseline_doc["version"] != "1" {
+            error_exit("invalid baseline file: unsupported baseline version")
+        }
+        for baseline_fp_item in baseline_doc["fingerprints"] {
+            if type(baseline_fp_item) != "string" {
+                error_exit("invalid baseline file: fingerprints must be strings")
             }
+            baseline_fp := trim(baseline_fp_item)
+            if baseline_fp != "" { BASELINE_FINGERPRINTS[baseline_fp] := true }
         }
     } except err {
         error_exit("invalid baseline file: " + BASELINE_PATH + ": " + to_string(err))
@@ -911,10 +920,7 @@ if IGNORE_FILE != "" {
 
     if file_exists(ignore_file_path) {
         try {
-            ignore_text := decode_utf8_prefix_beneath(IGNORE_READ_ROOT, IGNORE_READ_REL, 262145)
-            if len(ignore_text) > 262144 {
-                limit_error("SCOUT-LIMIT-IGNORE-BYTES", "ignore file exceeds 262144 bytes")
-            }
+            ignore_text := read_complete_scan_input(IGNORE_READ_ROOT, IGNORE_READ_REL, 262144, "SCOUT-LIMIT-IGNORE-BYTES", "ignore")
             ignore_lines := split(ignore_text, "\n")
             for ignore_line in ignore_lines {
                 ignore_rule := trim(ignore_line)
@@ -946,10 +952,10 @@ if PROJECT_NAME == "" {
 PROJECT_SLUG := sanitize_slug(PROJECT_NAME)
 RUN_TS := format_date(now(), "YYYYMMDD-HHmmss") + "-" + to_string(current_timestamp()) + "-" + substring(uuid_v4(), 0, 8)
 OUTPUT := OUTPUT_ROOT + "/" + PROJECT_SLUG + "-" + RUN_TS
-STAGING := OUTPUT_ROOT + "/.scout-stage-" + RUN_TS
+STAGE_NAME := ".scout-stage-" + uuid_v4()
+STAGING := OUTPUT_ROOT + "/" + STAGE_NAME
 
 OUTPUT_ROOT_ABS := ""
-OUTPUT_BASE := basename_from_path(OUTPUT_ROOT)
 if file_exists(OUTPUT_ROOT) {
     OUTPUT_ROOT_ABS := path_absolute(OUTPUT_ROOT)
 }
@@ -961,6 +967,7 @@ if BUILD_FILE_TREE {
     TREE_LINES := ["# Project File Tree", "", "- [D] " + markdown_data(TARGET_DISPLAY)]
 }
 CODE_FILES := []
+SCANNED_ENTRIES := 0
 TOTAL_FILES_SEEN := 0
 TOTAL_DIRS_SEEN := 0
 
@@ -982,142 +989,147 @@ while len(LEVEL_DIRS) > 0 {
         }
 
         try {
-            items := sort_strings_asc(list_dir(dir_path))
-            for item in items {
-                try {
-                    # Honor the explicit ignore list, but keep useful hidden project
-                    # directories (for example .github) available to the scanner.
-                    # Exclude generated reports only when the output root is inside
-                    # the target; a same-named directory elsewhere is not output.
-                    if has_key(IGNORED_DIRS, item) == 0 && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) {
-                        full_path := dir_path + "/" + item
-                        child_abs := path_absolute(full_path)
-                        output_dir_entry := OUTPUT_ROOT_ABS != "" && item == OUTPUT_BASE && child_abs == OUTPUT_ROOT_ABS
-                        if !output_dir_entry && is_canonical_path_within_target(child_abs, TARGET_ABS) {
-                            if TOTAL_FILES_SEEN + TOTAL_DIRS_SEEN >= MAX_ENTRIES {
-                                limit_error("SCOUT-LIMIT-ENTRIES", "scan entry limit exceeded: " + to_string(MAX_ENTRIES))
-                            }
-                            child_is_dir := path_is_dir(full_path)
-                            rel_path := relative_canonical_path_from_target(child_abs, TARGET_ABS)
-                            child_out_path := rel_path
-                            if PATH_MODE == "absolute" {
-                                child_out_path := child_abs
-                            }
-
-                            excluded := false
-                            if len(EXCLUDE_PATTERNS) > 0 {
-                                ex_i := 0
-                                while ex_i < len(EXCLUDE_PATTERNS) {
-                                    if pattern_match(rel_path, to_string(EXCLUDE_PATTERNS[ex_i])) {
-                                        excluded := true
-                                        break
-                                    }
-                                    ex_i := ex_i + 1
+            page := list_dir_page(dir_path, "", 2048, "")
+            SCANNED_ENTRIES := SCANNED_ENTRIES + page["examined_entries"]
+            if SCANNED_ENTRIES > MAX_ENTRIES {
+                limit_error("SCOUT-LIMIT-ENTRIES", "scan entry limit exceeded: " + to_string(MAX_ENTRIES))
+            }
+            while true {
+                items := page["entries"]
+                for item in items {
+                    try {
+                        # Honor the explicit ignore list, but keep useful hidden project
+                        # directories (for example .github) available to the scanner.
+                        # Exclude generated reports only when the output root is inside
+                        # the target; a same-named directory elsewhere is not output.
+                        if has_key(IGNORED_DIRS, item) == 0 && !(dir_depth == 0 && starts_with(item, "kujo-intel")) && !(dir_depth == 0 && starts_with(item, "kujo intel")) {
+                            full_path := dir_path + "/" + item
+                            child_abs := path_absolute(full_path)
+                            output_dir_entry := OUTPUT_ROOT_ABS != "" && child_abs == OUTPUT_ROOT_ABS
+                            if !output_dir_entry && is_canonical_path_within_target(child_abs, TARGET_ABS) {
+                                child_is_dir := path_is_dir(full_path)
+                                rel_path := relative_canonical_path_from_target(child_abs, TARGET_ABS)
+                                child_out_path := rel_path
+                                if PATH_MODE == "absolute" {
+                                    child_out_path := child_abs
                                 }
-                            }
 
-                            include_allowed := true
-                            if !child_is_dir && len(INCLUDE_PATTERNS) > 0 {
-                                include_allowed := false
-                                in_i := 0
-                                while in_i < len(INCLUDE_PATTERNS) {
-                                    if pattern_match(rel_path, to_string(INCLUDE_PATTERNS[in_i])) {
-                                        include_allowed := true
-                                        break
+                                excluded := false
+                                if len(EXCLUDE_PATTERNS) > 0 {
+                                    ex_i := 0
+                                    while ex_i < len(EXCLUDE_PATTERNS) {
+                                        if pattern_match(rel_path, to_string(EXCLUDE_PATTERNS[ex_i])) {
+                                            excluded := true
+                                            break
+                                        }
+                                        ex_i := ex_i + 1
                                     }
-                                    in_i := in_i + 1
                                 }
-                            }
 
-                            if !excluded && include_allowed {
-                                if child_is_dir {
-                                    TOTAL_DIRS_SEEN := TOTAL_DIRS_SEEN + 1
-                                    if BUILD_FILE_TREE {
-                                        TREE_LINES := push(TREE_LINES, indent + "- [D] " + markdown_data(item))
+                                include_allowed := true
+                                if !child_is_dir && len(INCLUDE_PATTERNS) > 0 {
+                                    include_allowed := false
+                                    in_i := 0
+                                    while in_i < len(INCLUDE_PATTERNS) {
+                                        if pattern_match(rel_path, to_string(INCLUDE_PATTERNS[in_i])) {
+                                            include_allowed := true
+                                            break
+                                        }
+                                        in_i := in_i + 1
                                     }
-                                    directory_cycle := false
-                                    for ancestor in dir_node["ancestors"] {
-                                        if child_abs == ancestor {
-                                            directory_cycle := true
+                                }
+
+                                if !excluded && include_allowed {
+                                    if child_is_dir {
+                                        TOTAL_DIRS_SEEN := TOTAL_DIRS_SEEN + 1
+                                        if BUILD_FILE_TREE {
+                                            TREE_LINES := push(TREE_LINES, indent + "- [D] " + markdown_data(item))
+                                        }
+                                        directory_cycle := false
+                                        for ancestor in dir_node["ancestors"] {
+                                            if child_abs == ancestor {
+                                                directory_cycle := true
+                                            }
+                                        }
+                                        if directory_cycle {
+                                            PARSE_ERRORS := push(PARSE_ERRORS, {"file": child_out_path, "error": "directory_cycle"})
+                                        }
+                                        if !directory_cycle && dir_depth < MAX_DEPTH {
+                                            NEXT_LEVEL := push(NEXT_LEVEL, {"path": full_path, "depth": dir_depth + 1, "ancestors": push(dir_node["ancestors"], child_abs), "out_path": child_out_path})
                                         }
                                     }
-                                    if directory_cycle {
-                                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": child_out_path, "error": "directory_cycle"})
-                                    }
-                                    if !directory_cycle && dir_depth < MAX_DEPTH {
-                                        NEXT_LEVEL := push(NEXT_LEVEL, {"path": full_path, "depth": dir_depth + 1, "ancestors": push(dir_node["ancestors"], child_abs), "out_path": child_out_path})
-                                    }
-                                }
 
-                                if !child_is_dir && path_is_file(full_path) {
-                                    TOTAL_FILES_SEEN := TOTAL_FILES_SEEN + 1
-
-                                    file_size_bytes := 0
-                                    try {
-                                        file_size_bytes := file_size(full_path)
-                                    } except err {
+                                    if !child_is_dir && path_is_file(full_path) {
+                                        TOTAL_FILES_SEEN := TOTAL_FILES_SEEN + 1
                                         file_size_bytes := 0
-                                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": rel_path, "error": "stat_failed"})
-                                    }
-
-                                    # Match the final dotted suffix, including names such as ".py".
-                                    name_parts := split(item, ".")
-                                    suffix := ""
-                                    if len(name_parts) > 1 {
-                                        suffix := "." + name_parts[len(name_parts) - 1]
-                                    }
-                                    lang := "Unknown"
-                                    if has_key(LANGUAGE_MAP, suffix) {
-                                        lang := LANGUAGE_MAP[suffix]
-                                    }
-
-                                    if BUILD_FILE_TREE {
-                                        size_label := to_string(file_size_bytes) + " B"
-                                        if file_size_bytes >= 1024 && file_size_bytes < 1048576 {
-                                            size_label := to_string(round((file_size_bytes / 1024) * 10) / 10) + " KB"
+                                        try {
+                                            file_size_bytes := file_size(full_path)
+                                        } except err {
+                                            file_size_bytes := 0
+                                            PARSE_ERRORS := push(PARSE_ERRORS, {"file": rel_path, "error": "stat_failed"})
                                         }
-                                        if file_size_bytes >= 1048576 {
-                                            size_label := to_string(round((file_size_bytes / 1048576) * 10) / 10) + " MB"
-                                        }
-                                        TREE_LINES := push(TREE_LINES, indent + "- [F] " + markdown_data(item) + " (" + lang + ", " + size_label + ")")
-                                    }
 
-                                    ignored_ext := has_key(IGNORED_EXTS, suffix) == 1
-                                    include_as_code := false
-                                    if !ignored_ext && lang != "Unknown" && lang != "Lock File" {
-                                        include_as_code := true
-                                    }
-                                    if !ignored_ext && has_key(MANIFEST_FILES, item) {
-                                        include_as_code := true
-                                    }
-                                    if !ignored_ext && starts_with(item, "requirements-") && ends_with(item, ".txt") {
-                                        include_as_code := true
-                                    }
-
-                                    if include_as_code {
-                                        if len(CODE_FILES) >= MAX_CODE_FILES {
-                                            limit_error("SCOUT-LIMIT-CODE-FILES", "code file limit exceeded: " + to_string(MAX_CODE_FILES))
+                                        # Match the final dotted suffix, including names such as ".py".
+                                        name_parts := split(item, ".")
+                                        suffix := ""
+                                        if len(name_parts) > 1 {
+                                            suffix := "." + name_parts[len(name_parts) - 1]
                                         }
-                                        CODE_FILES := push(CODE_FILES, {
-                                            "path": full_path,
-                                            "out_path": child_out_path,
-                                            "relative_source_path": rel_path,
-                                            "name": item,
-                                            "lang": lang,
-                                            "size": file_size_bytes
-                                        })
+                                        lang := "Unknown"
+                                        if has_key(LANGUAGE_MAP, suffix) {
+                                            lang := LANGUAGE_MAP[suffix]
+                                        }
+
+                                        if BUILD_FILE_TREE {
+                                            size_label := to_string(file_size_bytes) + " B"
+                                            if file_size_bytes >= 1024 && file_size_bytes < 1048576 {
+                                                size_label := to_string(round((file_size_bytes / 1024) * 10) / 10) + " KB"
+                                            }
+                                            if file_size_bytes >= 1048576 {
+                                                size_label := to_string(round((file_size_bytes / 1048576) * 10) / 10) + " MB"
+                                            }
+                                            TREE_LINES := push(TREE_LINES, indent + "- [F] " + markdown_data(item) + " (" + lang + ", " + size_label + ")")
+                                        }
+
+                                        ignored_ext := has_key(IGNORED_EXTS, suffix) == 1
+                                        include_as_code := false
+                                        if !ignored_ext && lang != "Unknown" && lang != "Lock File" {
+                                            include_as_code := true
+                                        }
+                                        if !ignored_ext && has_key(MANIFEST_FILES, item) {
+                                            include_as_code := true
+                                        }
+                                        if !ignored_ext && starts_with(item, "requirements-") && ends_with(item, ".txt") {
+                                            include_as_code := true
+                                        }
+
+                                        if include_as_code {
+                                            if len(CODE_FILES) >= MAX_CODE_FILES {
+                                                limit_error("SCOUT-LIMIT-CODE-FILES", "code file limit exceeded: " + to_string(MAX_CODE_FILES))
+                                            }
+                                            CODE_FILES := push(CODE_FILES, {
+                                                "path": full_path,
+                                                "out_path": child_out_path,
+                                                "relative_source_path": rel_path,
+                                                "name": item,
+                                                "lang": lang,
+                                                "size": file_size_bytes
+                                            })
+                                        }
                                     }
                                 }
                             }
                         }
+                    } except err {
+                        entry_error_path := dir_out_path + "/" + item
+                        if dir_out_path == "." {
+                            entry_error_path := item
+                        }
+                        PARSE_ERRORS := push(PARSE_ERRORS, {"file": entry_error_path, "error": "path_unavailable"})
                     }
-                } except err {
-                    entry_error_path := dir_out_path + "/" + item
-                    if dir_out_path == "." {
-                        entry_error_path := item
-                    }
-                    PARSE_ERRORS := push(PARSE_ERRORS, {"file": entry_error_path, "error": "path_unavailable"})
                 }
+                if !page["truncated"] { break }
+                page := list_dir_page(dir_path, page["next_after"], 2048, "")
             }
         } except err {
             PARSE_ERRORS := push(PARSE_ERRORS, {"file": dir_out_path, "error": "directory_read_failed"})
@@ -1157,15 +1169,6 @@ for code_file in CODE_FILES {
     lang := code_file["lang"]
     size := code_file["size"]
 
-    analyzed_file_bytes := size
-    if analyzed_file_bytes > MAX_FILE_SIZE * 4 {
-        analyzed_file_bytes := MAX_FILE_SIZE * 4
-    }
-    if ANALYZED_BYTES + analyzed_file_bytes > MAX_TOTAL_ANALYZED_BYTES {
-        limit_error("SCOUT-LIMIT-ANALYZED-BYTES", "total analyzed byte limit exceeded: " + to_string(MAX_TOTAL_ANALYZED_BYTES))
-    }
-    ANALYZED_BYTES := ANALYZED_BYTES + analyzed_file_bytes
-
     if METRICS_ENABLED {
         METRICS["total_size"] := METRICS["total_size"] + size
 
@@ -1188,7 +1191,21 @@ for code_file in CODE_FILES {
         # changes in the meantime. A vanished entry becomes read_failed.
         relative_source_path := code_file["relative_source_path"]
         max_read_bytes := MAX_FILE_SIZE * 4
-        content := decode_utf8_prefix_beneath(TARGET_ABS, relative_source_path, max_read_bytes)
+        remaining_bytes := MAX_TOTAL_ANALYZED_BYTES - ANALYZED_BYTES
+        request_bytes := max_read_bytes + 1
+        if remaining_bytes < max_read_bytes { request_bytes := remaining_bytes + 1 }
+        prefix := read_binary_prefix_beneath(TARGET_ABS, relative_source_path, request_bytes)
+        bytes_read := len(prefix)
+        if bytes_read > max_read_bytes {
+            prefix := slice(prefix, 0, max_read_bytes)
+            bytes_read := max_read_bytes
+            truncated := true
+        }
+        if bytes_read > remaining_bytes {
+            limit_error("SCOUT-LIMIT-ANALYZED-BYTES", "total analyzed byte limit exceeded: " + to_string(MAX_TOTAL_ANALYZED_BYTES))
+        }
+        ANALYZED_BYTES := ANALYZED_BYTES + bytes_read
+        content := decode_utf8_prefix(prefix, truncated)
         read_ok := true
     } except err {
         read_ok := false
@@ -1199,7 +1216,7 @@ for code_file in CODE_FILES {
     }
 
     if read_ok {
-        if size > MAX_FILE_SIZE * 4 || len(content) > MAX_FILE_SIZE {
+        if len(content) > MAX_FILE_SIZE {
             content := substring(content, 0, MAX_FILE_SIZE)
             truncated := true
         }
@@ -2942,18 +2959,19 @@ try {
     create_dir(STAGING)
 } except err {
     error_exit("unable to create staging directory: " + STAGING)
+    if path_has_entry(STAGING) { error_exit("staging directory already exists") }
 }
 
 if OUTPUT_PROFILE == "full" {
-    write_file_atomic(STAGING + "/FILE_TREE.md", FILE_TREE_MD)
+    write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/FILE_TREE.md", FILE_TREE_MD)
 }
-write_file_atomic(STAGING + "/README.md", REPORT_MD)
-write_file_atomic(STAGING + "/llms.txt", LLMS_TXT)
+write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/README.md", REPORT_MD)
+write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/llms.txt", LLMS_TXT)
 if OUTPUT_PROFILE == "full" {
-    write_file_atomic(STAGING + "/AGENTS.md", AGENTS_MD)
-    write_file_atomic(STAGING + "/CHECKLIST.md", CHECKLIST_MD)
+    write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/AGENTS.md", AGENTS_MD)
+    write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/CHECKLIST.md", CHECKLIST_MD)
 }
-write_file_atomic(STAGING + "/intelligence.json", to_json(INTELLIGENCE))
+write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/intelligence.json", to_json(INTELLIGENCE))
 
 SECURITY_EXPORT_FILES := []
 if !SKIP_SEC {
@@ -2961,11 +2979,11 @@ if !SKIP_SEC {
     while export_i < len(SECURITY_EXPORT_FORMATS) {
         active_export_format := SECURITY_EXPORT_FORMATS[export_i]
         if active_export_format == "sarif" {
-            write_file_atomic(STAGING + "/security.sarif", to_json(build_sarif_security_export(SECURITY_FINDINGS, SECURITY_PATTERNS, VERSION)))
+            write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/security.sarif", to_json(build_sarif_security_export(SECURITY_FINDINGS, SECURITY_PATTERNS, VERSION)))
             SECURITY_EXPORT_FILES := push(SECURITY_EXPORT_FILES, "security.sarif")
         }
         if active_export_format == "jsonl" {
-            write_file_atomic(STAGING + "/security.jsonl", build_jsonl_security_export(SECURITY_FINDINGS))
+            write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/security.jsonl", build_jsonl_security_export(SECURITY_FINDINGS))
             SECURITY_EXPORT_FILES := push(SECURITY_EXPORT_FILES, "security.jsonl")
         }
 
@@ -3021,7 +3039,7 @@ if EMIT_KENNEL_INDEX {
         }]
     }
 
-    write_file_atomic(STAGING + "/index.json", to_json(kennel_index_payload))
+    write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/index.json", to_json(kennel_index_payload))
     KENNEL_INDEX_WRITTEN := OUTPUT + "/index.json"
 }
 
@@ -3048,8 +3066,7 @@ if EMIT_KENNEL_METADATA {
         }]
     }
 
-    create_dir(STAGING + "/packages")
-    write_file_atomic(STAGING + "/packages/" + PROJECT_SLUG + ".json", to_json(kennel_metadata_payload))
+    write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/packages/" + PROJECT_SLUG + ".json", to_json(kennel_metadata_payload))
     KENNEL_METADATA_WRITTEN := OUTPUT + "/packages/" + PROJECT_SLUG + ".json"
 }
 
@@ -3097,8 +3114,8 @@ SCAN_MANIFEST := {
     "artifacts": MANIFEST_ARTIFACTS
 }
 
-write_file_atomic(STAGING + "/scan_manifest.json", to_json(SCAN_MANIFEST))
-if file_exists(OUTPUT) {
+write_file_atomic_beneath(OUTPUT_ROOT, STAGE_NAME + "/scan_manifest.json", to_json(SCAN_MANIFEST))
+if path_has_entry(OUTPUT) {
     error_exit("output directory already exists: " + OUTPUT)
 }
 try {
@@ -3111,7 +3128,7 @@ try {
 # An unsuccessful baseline write leaves any previous baseline intact.
 if BASELINE_PAYLOAD != "" && (!STRICT_SCAN || len(PARSE_ERRORS) == 0) {
     try {
-        write_file_atomic(BASELINE_PATH, BASELINE_PAYLOAD, true)
+        write_file_atomic_beneath(BASELINE_READ_ROOT, BASELINE_READ_REL, BASELINE_PAYLOAD, BASELINE_PRESENT)
         BASELINE_WRITTEN := BASELINE_PATH
     } except err {
         error_exit("unable to publish baseline: " + to_string(err))

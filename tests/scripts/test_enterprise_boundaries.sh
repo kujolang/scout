@@ -5,7 +5,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 resolve_kujo_bin "$REPO_ROOT"
 
-case_root="$REPO_ROOT/tests/tmp/enterprise-boundaries"
+mkdir -p "$REPO_ROOT/tests/tmp"
+case_root="$(mktemp -d "$REPO_ROOT/tests/tmp/enterprise-boundaries.XXXXXX")"
 mkdir -p "$case_root/target" "$case_root/outside" "$case_root/results"
 python3 - "$case_root" <<'PY'
 import json, pathlib, sys
@@ -13,7 +14,7 @@ root = pathlib.Path(sys.argv[1])
 target = root / "target"
 (target / "normal.js").write_text("app.get('/safe')\n", encoding="utf-8")
 (target / "name\n## injected.md").write_text("safe\n", encoding="utf-8")
-(target / "package.json").write_text(json.dumps({"dependencies": {"evil\n## forged|`": "1"}}), encoding="utf-8")
+(target / "package.json").write_text(json.dumps({"dependencies": {"evil\n## forged|`": "1", "literal[display]&name": "2"}}), encoding="utf-8")
 (root / "outside" / "baseline.json").write_text('{"fingerprints": []}\n', encoding="utf-8")
 (root / "outside" / "ignore").write_text("*.js\n", encoding="utf-8")
 (root / "outside" / "empty-ignore").write_text("", encoding="utf-8")
@@ -30,6 +31,7 @@ agents = (report / "AGENTS.md").read_text()
 assert "\n## forged" not in readme
 assert "\n## injected" not in tree
 assert "evil ## forged&#124;'" in readme
+assert "literal&#91;display&#93;&amp;name" in readme
 assert "name ## injected.md" in tree
 assert "Repository-derived route details are intentionally kept" in agents
 assert "/safe" not in agents
@@ -95,5 +97,28 @@ assert_limit_code "$case_root/ignore-limit-cwd" SCOUT-LIMIT-IGNORE-RULES ignore-
 	--baseline "$case_root/outside/baseline.json" \
 	--ignore-file "$case_root/outside/ignore" \
 	--quick >/dev/null
+
+cp "$case_root/target/package.json" "$case_root/expected-package.json"
+if "$KUJO_BIN" run "$REPO_ROOT/scout.kujo" -- "$case_root/target" \
+    -o "$case_root/invalid-baseline-results" --baseline package.json --write-baseline \
+    >"$case_root/invalid-baseline.log" 2>&1; then
+    echo "Expected an unrelated JSON document to be rejected as a baseline"
+    exit 1
+fi
+grep -q 'expected an object with a fingerprints array' "$case_root/invalid-baseline.log"
+cmp "$case_root/target/package.json" "$case_root/expected-package.json"
+
+python3 - "$case_root" <<'PY_BOUNDARIES'
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+(root / "outside" / "large-ignore").write_text("#" + ("é" * 131073), encoding="utf-8")
+(root / "outside" / "large-baseline.json").write_text(
+    json.dumps({"fingerprints": [], "note": "é" * 2097152}, ensure_ascii=False), encoding="utf-8"
+)
+PY_BOUNDARIES
+assert_limit_code "$case_root" SCOUT-LIMIT-IGNORE-BYTES oversized-ignore \
+    --ignore-file "$case_root/outside/large-ignore"
+assert_limit_code "$case_root" SCOUT-LIMIT-BASELINE-BYTES oversized-baseline \
+    --baseline "$case_root/outside/large-baseline.json"
 
 echo "Enterprise input, output, and resource boundary tests passed"
